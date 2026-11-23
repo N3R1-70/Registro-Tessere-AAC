@@ -124,21 +124,22 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .btn-install {
       background: #facc15;
       color: #14532d;
-      border: none;
-      padding: 9px 14px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.88rem;
+      border: 2px solid #fef08a;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.92rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      gap: 8px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
       transition: transform 0.15s, background 0.15s;
     }
 
@@ -584,10 +585,11 @@
       flex-wrap: wrap;
     }
 
+    /* Modali */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.68);
       display: none;
       align-items: center;
       justify-content: center;
@@ -601,34 +603,131 @@
 
     .modal {
       background: #ffffff;
-      border-radius: 14px;
-      max-width: 520px;
+      border-radius: 16px;
+      max-width: 500px;
       width: 100%;
       padding: 22px;
-      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
-      max-height: 90vh;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+      max-height: 92vh;
       overflow-y: auto;
+    }
+
+    .modal-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-header-brand img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: contain;
+      border: 2px solid var(--primary);
     }
 
     .modal h3 {
       color: var(--primary);
       font-size: 1.15rem;
-      margin-bottom: 10px;
+      line-height: 1.25;
     }
 
-    .install-step-box {
+    .inapp-warning {
+      background: #fef2f2;
+      border: 2px solid #f87171;
+      color: #991b1b;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      font-size: 0.94rem;
+    }
+
+    .inapp-warning strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .big-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
       background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-text {
+      font-size: 0.96rem;
+      color: #1e293b;
+      line-height: 1.45;
+    }
+
+    .key-pill {
+      display: inline-block;
+      background: #e2e8f0;
+      border: 1px solid #94a3b8;
+      color: #0f172a;
+      font-weight: 800;
+      padding: 1px 8px;
+      border-radius: 6px;
       font-size: 0.9rem;
     }
 
-    .install-step-box strong {
+    .device-switch-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 95px;
+      padding: 8px 10px;
+      border: 1.5px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--primary-soft);
+      border-color: var(--primary);
       color: var(--primary);
-      display: block;
-      margin-bottom: 4px;
+    }
+
+    .share-link-box {
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 14px;
+      text-align: center;
     }
 
     .toast {
@@ -671,7 +770,7 @@
       <div class="header-actions">
         <button type="button" class="btn-outline btn-sm" id="btnRefreshCloud" style="background:#ffffff;color:#14532d;">🔄 Aggiorna</button>
         <button type="button" class="btn-install" id="btnInstallApp">
-          📲 Installa App / Schermata Home
+          📲 Salva sul Telefono / PC
         </button>
       </div>
     </div>
@@ -879,42 +978,98 @@
     </div>
   </div>
 
-  <!-- MODAL GUIDA INSTALLAZIONE -->
+  <!-- MODAL GUIDATA E SEMPLIFICATA PER SALVARE L'APP -->
   <div class="modal-backdrop" id="installModal">
     <div class="modal">
-      <h3>📲 Aggiungi App alla Schermata Home / Desktop</h3>
-      <p style="font-size: 0.88rem; color: #475569; margin-bottom: 12px;">
-        Segui i passaggi per il tuo dispositivo o browser:
-      </p>
-
-      <div class="install-step-box">
-        <strong>📱 Telefoni Samsung (Browser Samsung Internet)</strong>
-        1. Se hai aperto il link da WhatsApp o Email, tocca i <b>3 puntini (⋮) in alto</b> &rarr; <b>Apri nel browser</b>.<br />
-        2. Tocca le <b>3 linee (☰) in basso a destra</b> &rarr; <b>Aggiungi pagina a</b> &rarr; <b>Schermata Home</b>.
-      </div>
-
-      <div class="install-step-box">
-        <strong>🤖 Android / Samsung (Google Chrome)</strong>
-        1. Tocca i <b>3 puntini (⋮) in alto a destra</b>.<br />
-        2. Tocca <b>Aggiungi a schermata Home</b> oppure <b>Installa app</b>.
-      </div>
-
-      <div class="install-step-box">
-        <strong>🍎 iPhone / iPad (Safari)</strong>
-        1. Tocca <b>Condividi</b> (quadrato con freccia verso l'alto).<br />
-        2. Tocca <b>Aggiungi alla schermata Home</b>.
-      </div>
-
-      <div class="install-step-box">
-        <strong>💻 Computer (Windows / Mac)</strong>
-        <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-primary btn-sm" id="btnDownloadShortcut">⬇️ Scarica Collegamento PC (.url)</button>
-          <button type="button" class="btn btn-outline btn-sm" id="btnCopyUrl">📋 Copia Link App</button>
+      <div class="modal-header-brand">
+        <img src="FEDERCACCIA UCT.jpg" alt="Logo" onerror="handleLogoError(this)" />
+        <div>
+          <h3>Metti l'icona sulla Schermata</h3>
+          <p style="font-size: 0.85rem; color: var(--muted);">Così la apri con un tocco come una normale App</p>
         </div>
       </div>
 
-      <div class="form-actions" style="justify-content: flex-end;">
-        <button type="button" class="btn btn-secondary" id="btnCloseInstallModal">Chiudi</button>
+      <!-- Avviso automatico se aperta dentro WhatsApp/Facebook/Mail -->
+      <div class="inapp-warning" id="inAppBrowserAlert" style="display:none;">
+        <strong>⚠️ Stai aprendo il link dentro WhatsApp / Email</strong>
+        Da qui non si può salvare l'icona: tocca prima i <span class="key-pill">⋮ 3 puntini in alto a destra</span> e scegli <b>"Apri nel browser"</b> (o <b>"Apri in Chrome / Safari"</b>).
+      </div>
+
+      <!-- Pulsante installazione diretta con 1 clic se supportato -->
+      <div id="nativeInstallBox" style="display:none; margin-bottom: 14px;">
+        <button type="button" class="btn btn-primary" id="btnTriggerNativeInstall" style="width:100%; padding: 14px; font-size: 1.05rem;">
+          ✅ Tocca qui per Installare Subito
+        </button>
+      </div>
+
+      <!-- Selettore dispositivo (preselezionato in automatico) -->
+      <div class="device-switch-tabs" id="deviceTabs">
+        <button type="button" class="tab-btn" data-target="guide-android">Android / Samsung</button>
+        <button type="button" class="tab-btn" data-target="guide-ios">iPhone / iPad</button>
+        <button type="button" class="tab-btn" data-target="guide-pc">Computer (PC)</button>
+      </div>
+
+      <!-- GUIDA ANDROID / SAMSUNG -->
+      <div id="guide-android" class="device-guide">
+        <div class="big-step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            Guarda gli angoli dello schermo e tocca il menu con i <span class="key-pill">⋮ 3 puntini</span> (in alto a destra su Chrome) oppure le <span class="key-pill">☰ 3 linee</span> (in basso a destra su Samsung).
+          </div>
+        </div>
+        <div class="big-step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            Tocca la voce <b>"Aggiungi a schermata Home"</b> (oppure <b>"Installa app"</b>) e poi conferma premendo <b>Aggiungi / Installa</b>.
+          </div>
+        </div>
+      </div>
+
+      <!-- GUIDA IPHONE / IPAD -->
+      <div id="guide-ios" class="device-guide" style="display:none;">
+        <div class="big-step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            Nella barra in basso di Safari tocca l'icona <b>Condividi</b> <span class="key-pill">⬆️ Quadrato con freccia</span>.
+          </div>
+        </div>
+        <div class="big-step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            Scorri l'elenco verso il basso, tocca <b>"Aggiungi alla schermata Home"</b> e poi premi <b>Aggiungi</b> in alto a destra.
+          </div>
+        </div>
+      </div>
+
+      <!-- GUIDA COMPUTER PC / MAC -->
+      <div id="guide-pc" class="device-guide" style="display:none;">
+        <div class="big-step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            In alto a destra nella barra dove c'è l'indirizzo del sito, clicca sull'icona <span class="key-pill">🖥️ Installa</span> oppure sui <span class="key-pill">⋮ 3 puntini</span> in alto a destra del browser.
+          </div>
+        </div>
+        <div class="big-step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            Scegli <b>"Salva e condividi" &rarr; "Installa pagina come app"</b> (oppure <b>"Crea collegamento"</b>). Troverai l'icona direttamente sul Desktop.
+          </div>
+        </div>
+      </div>
+
+      <!-- Condivisione rapida con altri operatori -->
+      <div class="share-link-box">
+        <div style="font-size: 0.85rem; color: #334155; font-weight: 700; margin-bottom: 8px;">
+          Devi mandare questa App a un altro operatore?
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary btn-sm" id="btnShareWhatsApp">📤 Invia su WhatsApp</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnCopyUrl">📋 Copia Link</button>
+        </div>
+      </div>
+
+      <div class="form-actions" style="justify-content: flex-end; margin-top: 14px;">
+        <button type="button" class="btn btn-secondary" id="btnCloseInstallModal">Ho capito, chiudi</button>
       </div>
     </div>
   </div>
@@ -941,7 +1096,7 @@
       : null;
 
     // =========================================================================
-    // 2. LOGO FALLBACK + PWA MANIFEST + SERVICE WORKER
+    // 2. LOGO FALLBACK + PWA + INSTALLAZIONE GUIDATA INTELLIGENTE
     // =========================================================================
     const FALLBACK_SVG_DATA = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -996,45 +1151,95 @@
     }
     setupPWA();
 
+    // Nasconde il pulsante se l'utente ha già aperto l'app dall'icona salvata
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    if (isStandalone) {
+      document.getElementById("btnInstallApp").style.display = "none";
+    }
+
     let deferredPrompt = null;
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
+      document.getElementById("nativeInstallBox").style.display = "block";
+    });
+
+    function detectDeviceGuide() {
+      const ua = navigator.userAgent || "";
+      const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line|wv|WebView/i.test(ua);
+      document.getElementById("inAppBrowserAlert").style.display = isInApp ? "block" : "none";
+
+      let target = "guide-pc";
+      if (/iPhone|iPad|iPod/i.test(ua)) {
+        target = "guide-ios";
+      } else if (/Android/i.test(ua)) {
+        target = "guide-android";
+      }
+      selectDeviceTab(target);
+    }
+
+    function selectDeviceTab(targetId) {
+      document.querySelectorAll(".device-guide").forEach((el) => {
+        el.style.display = el.id === targetId ? "block" : "none";
+      });
+      document.querySelectorAll("#deviceTabs .tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.target === targetId);
+      });
+    }
+
+    document.querySelectorAll("#deviceTabs .tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => selectDeviceTab(btn.dataset.target));
     });
 
     document.getElementById("btnInstallApp").addEventListener("click", async () => {
+      // Se il browser consente l'installazione immediata con 1 clic (es. Chrome Android/PC)
       if (deferredPrompt) {
         deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
         deferredPrompt = null;
+        document.getElementById("nativeInstallBox").style.display = "none";
         if (choice && choice.outcome === "accepted") {
-          showToast("✅ App installata sul dispositivo!");
+          showToast("✅ Icona salvata sulla schermata!");
           return;
         }
       }
+      detectDeviceGuide();
       document.getElementById("installModal").classList.add("open");
+    });
+
+    document.getElementById("btnTriggerNativeInstall").addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById("nativeInstallBox").style.display = "none";
+      if (choice && choice.outcome === "accepted") {
+        document.getElementById("installModal").classList.remove("open");
+        showToast("✅ App installata con successo!");
+      }
     });
 
     document.getElementById("btnCloseInstallModal").addEventListener("click", () => {
       document.getElementById("installModal").classList.remove("open");
     });
 
-    document.getElementById("btnDownloadShortcut").addEventListener("click", () => {
-      const urlContent = `[InternetShortcut]\r\nURL=${window.location.href}\r\n`;
-      const blob = new Blob([urlContent], { type: "application/octet-stream" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "Gestione Tessere AAC.url";
-      a.click();
-      showToast("Collegamento scaricato!");
+    document.getElementById("btnShareWhatsApp").addEventListener("click", () => {
+      const cleanUrl = window.location.href.split("#")[0];
+      const msg = encodeURIComponent(
+        `Ecco il link per la registrazione Tessere AAC (Federcaccia Toscana UCT):\n${cleanUrl}\n\nAprilo nel browser (Chrome o Safari) e tocca "Salva sul Telefono / PC" in alto per mettere l'icona sullo schermo.`
+      );
+      window.open(`https://wa.me/?text=${msg}`, "_blank");
     });
 
     document.getElementById("btnCopyUrl").addEventListener("click", async () => {
+      const cleanUrl = window.location.href.split("#")[0];
       try {
-        await navigator.clipboard.writeText(window.location.href);
-        showToast("Link copiato negli appunti!");
+        await navigator.clipboard.writeText(cleanUrl);
+        showToast("📋 Link copiato! Ora puoi incollarlo dove vuoi.");
       } catch {
-        showToast("Copia manualmente l'indirizzo dalla barra in alto.");
+        showToast("Copia l'indirizzo dalla barra in alto del browser.");
       }
     });
 
