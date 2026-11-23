@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1b4332">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tessere AAC">
+    <title>Gestione Tessere AAC - Federcaccia Toscana UCT</title>
+    <!-- Placeholder dinamici per Manifest PWA e Icone App -->
+    <link id="pwa-manifest-link" rel="manifest" href="">
+    <link id="apple-touch-icon-link" rel="apple-touch-icon" href="">
+    <link id="favicon-link" rel="icon" type="image/png" href="">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS per esportazione Excel (.xlsx) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF + jsPDF-AutoTable per esportazione PDF professionale -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        forest: {
+                            50: '#f4f6f4',
+                            100: '#e2ece6',
+                            200: '#c5d9cd',
+                            300: '#9abca8',
+                            400: '#6c9a80',
+                            500: '#4a7c61',
+                            600: '#37624c',
+                            700: '#2b4e3c',
+                            800: '#223e30',
+                            900: '#1b4332',
+                            950: '#0f261c',
+                        },
+                        fidcgold: {
+                            400: '#e9c46a',
+                            500: '#d4a373',
+                            600: '#b8864b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#f4f6f4] text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Notifica Toast Personalizzata (Nessun alert() nativo) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Modale di Conferma Personalizzata -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-3 text-amber-600 mb-3">
+                <div class="p-2.5 bg-amber-100 rounded-xl">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <h3 id="confirm-title" class="text-lg font-bold text-slate-900">Conferma azione</h3>
+            </div>
+            <p id="confirm-message" class="text-slate-600 text-sm leading-relaxed mb-6">Sei sicuro di voler procedere?</p>
+            <div class="flex justify-end gap-3">
+                <button id="confirm-cancel" type="button" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    Annulla
+                </button>
+                <button id="confirm-ok" type="button" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors">
+                    Conferma
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Installazione App / Collegamento Desktop -->
+    <div id="install-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-auto">
+            <!-- Header Modale con Logo Ufficiale -->
+            <div class="bg-forest-900 text-white px-6 py-4 flex items-center justify-between border-b-2 border-fidcgold-400">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-white p-1 border-2 border-fidcgold-400 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                        <img src="FEDERCACCIA UCT.jpg" alt="Logo Federcaccia Toscana UCT"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            class="w-full h-full object-contain">
+                        <div style="display:none;" class="w-full h-full rounded-lg bg-forest-900 text-fidcgold-400 flex-col items-center justify-center font-extrabold text-[10px] leading-tight text-center">
+                            <span>FIdC</span>
+                            <span class="text-white text-[8px]">UCT</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-extrabold tracking-tight text-white">Installa App / Collegamento</h3>
+                        <p class="text-xs text-fidcgold-400 font-medium">Federcaccia Toscana - Unione Cacciatori Toscani</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeInstallModal()" class="p-2 rounded-xl text-forest-200 hover:text-white hover:bg-forest-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <!-- Banner Installazione Diretta se supportata -->
+                <div id="native-install-banner" class="hidden p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-xs sm:text-sm text-emerald-950">
+                        <p class="font-bold">Installazione rapida disponibile!</p>
+                        <p class="text-emerald-800 mt-0.5">Il tuo browser permette l'installazione diretta con un clic.</p>
+                    </div>
+                    <button type="button" onclick="triggerNativeInstall()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 text-white text-xs font-bold shadow-sm transition-all shrink-0 flex items-center justify-center gap-1.5">
+                        <i data-lucide="download" class="w-4 h-4 text-fidcgold-400"></i>
+                        <span>Installa Ora</span>
+                    </button>
+                </div>
+
+                <!-- Selettore Dispositivo (rilevato automaticamente ma cliccabile) -->
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Seleziona il tuo dispositivo per le istruzioni rapide:</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="tab-os-android" onclick="switchInstallGuide('android')"
+                            class="py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="smartphone" class="w-4 h-4"></i>
+                            <span>Android</span>
+                        </button>
+                        <button type="button" id="tab-os-ios" onclick="switchInstallGuide('ios')"
+                            class="py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="tablet-smartphone" class="w-4 h-4"></i>
+                            <span>iPhone / iPad</span>
+                        </button>
+                        <button type="button" id="tab-os-desktop" onclick="switchInstallGuide('desktop')"
+                            class="py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="monitor" class="w-4 h-4"></i>
+                            <span>PC / Mac</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenuto Istruzioni in 2 Passaggi -->
+                <div id="guide-content-android" class="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <p class="text-sm text-slate-700">Apri questa pagina con <strong>Google Chrome</strong> e tocca il menu con i <strong>tre puntini (&#8942;)</strong> in alto a destra.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <p class="text-sm text-slate-700">Tocca <strong>"Installa app"</strong> oppure <strong>"Aggiungi a schermata Home"</strong> e conferma: troverai l'icona Federcaccia UCT tra le tue app.</p>
+                    </div>
+                </div>
+
+                <div id="guide-content-ios" class="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <p class="text-sm text-slate-700">Apri la pagina con <strong>Safari</strong> e tocca l'icona <strong>Condividi</strong> (il quadrato con la freccia verso l'alto nella barra in basso).</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <p class="text-sm text-slate-700">Scorri verso il basso, seleziona <strong>"Aggiungi alla schermata Home"</strong> e tocca <strong>"Aggiungi"</strong> in alto a destra.</p>
+                    </div>
+                </div>
+
+                <div id="guide-content-desktop" class="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <p class="text-sm text-slate-700">Su <strong>Google Chrome</strong> o <strong>Microsoft Edge</strong>, clicca sull'icona di installazione nella barra degli indirizzi in alto a destra (oppure menu <strong>&#8942; &rarr; Salva e condividi &rarr; Crea scorciatoia / Installa</strong>).</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-forest-900 text-fidcgold-400 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <p class="text-sm text-slate-700">Conferma per creare l'icona sul <strong>Desktop</strong> e aprire il Registro Tessere AAC in una finestra dedicata.</p>
+                    </div>
+                </div>
+
+                <!-- Azioni Rapide: Scarica Collegamento Desktop (.url) e Copia Link -->
+                <div class="pt-2 border-t border-slate-200 flex flex-col sm:flex-row gap-2.5">
+                    <button type="button" onclick="downloadDesktopShortcut()"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 text-white text-xs font-bold shadow-sm transition-all">
+                        <i data-lucide="monitor-down" class="w-4 h-4 text-fidcgold-400"></i>
+                        <span>Scarica Collegamento Desktop</span>
+                    </button>
+                    <button type="button" onclick="copyAppUrl()"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold transition-all">
+                        <i data-lucide="copy" class="w-4 h-4 text-forest-800"></i>
+                        <span>Copia Link App</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / Navbar -->
+    <header class="bg-forest-900 text-white shadow-lg border-b-2 border-fidcgold-400 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <!-- Logo Ufficiale Federcaccia Toscana - UCT -->
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-2xl p-1 border-2 border-forest-600 shadow-md flex items-center justify-center shrink-0 overflow-hidden">
+                        <img id="header-logo-img" src="FEDERCACCIA UCT.jpg" alt="Federcaccia Toscana - Unione Cacciatori Toscani"
+                            onerror="this.style.display='none'; document.getElementById('header-logo-fallback').style.display='flex';"
+                            class="w-full h-full object-contain">
+                        <!-- Fallback vettoriale SVG stilizzato se l'immagine non è trovata -->
+                        <div id="header-logo-fallback" style="display:none;" class="w-full h-full rounded-xl bg-forest-900 border border-fidcgold-400 flex-col items-center justify-center text-center p-1">
+                            <svg viewBox="0 0 64 64" class="w-8 h-8" aria-hidden="true">
+                                <circle cx="32" cy="32" r="29" fill="#1b4332" stroke="#e9c46a" stroke-width="3"/>
+                                <text x="32" y="29" text-anchor="middle" fill="#e9c46a" font-family="Inter, sans-serif" font-weight="800" font-size="14">FIdC</text>
+                                <rect x="14" y="34" width="12" height="4" fill="#009246"/>
+                                <rect x="26" y="34" width="12" height="4" fill="#ffffff"/>
+                                <rect x="38" y="34" width="12" height="4" fill="#ce2b37"/>
+                                <text x="32" y="50" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-weight="700" font-size="11">UCT</text>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight text-white">Registro Tessere AAC</h1>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-fidcgold-400 text-forest-950 shadow-sm">
+                                Federcaccia Toscana &bull; UCT
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-forest-100 mt-0.5">Area Addestramento Cani &bull; Rilascio tessere e resoconto contabile</p>
+                    </div>
+                </div>
+
+                <!-- Pulsanti Installazione App, Export e Backup -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="install-app-btn" type="button" onclick="handleInstallButtonClick()"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-fidcgold-400 hover:bg-fidcgold-500 text-forest-950 border border-fidcgold-500 transition-all shadow-sm cursor-pointer"
+                        title="Installa come App su Smartphone o crea collegamento su Desktop">
+                        <i data-lucide="smartphone" class="w-4 h-4"></i>
+                        <span>Installa App / Desktop</span>
+                    </button>
+                    <button onclick="exportExcel()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 transition-all shadow-sm" title="Scarica file Excel (.xlsx) con Elenco e Resoconto">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        <span>Esporta Excel</span>
+                    </button>
+                    <button onclick="exportPDF()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-rose-700 hover:bg-rose-600 text-white border border-rose-500 transition-all shadow-sm" title="Scarica documento PDF stampabile">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Esporta PDF</span>
+                    </button>
+                    <button onclick="exportJSON()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition-all shadow-sm" title="Salva copia di backup JSON">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Backup</span>
+                    </button>
+                    <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition-all shadow-sm cursor-pointer" title="Ripristina dati da file JSON">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Ripristina</span>
+                        <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+
+        <!-- Sezione 1: Dashboard Riepilogativa Generale & Per Punto di Rilascio -->
+        <section aria-label="Riepilogo Contabile">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-forest-700"></i>
+                    <span>Dashboard Riepilogativa & Resoconto Punti di Rilascio</span>
+                </h2>
+                <span class="text-xs font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm self-start sm:self-auto">
+                    Aggiornamento automatico in tempo reale
+                </span>
+            </div>
+
+            <!-- KPI Principali (Totale Generale) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Tessere Totali Rilasciate</p>
+                        <p id="stat-total-cards" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
+                    </div>
+                    <div class="p-3 bg-forest-100 text-forest-700 rounded-xl">
+                        <i data-lucide="id-card" class="w-7 h-7"></i>
+                    </div>
+                </div>
+
+                <div class="bg-forest-800 text-white rounded-2xl p-5 border border-forest-700 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-forest-200">Incasso Totale Complessivo</p>
+                        <p id="stat-total-revenue" class="text-3xl font-extrabold text-white mt-1">€ 0,00</p>
+                    </div>
+                    <div class="p-3 bg-forest-700 text-forest-100 rounded-xl">
+                        <i data-lucide="wallet" class="w-7 h-7"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Tesserati Federcaccia (€ 40)</p>
+                        <p id="stat-fidc-yes" class="text-2xl font-extrabold text-forest-700 mt-1">0</p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Non Tesserati FIdC (€ 45)</p>
+                        <p id="stat-fidc-no" class="text-2xl font-extrabold text-amber-700 mt-1">0</p>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100">
+                        <i data-lucide="user-plus" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resoconto Dettagliato per Punto di Rilascio ('Rilasciato da') -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="store" class="w-5 h-5 text-forest-700"></i>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">Resoconto per Punto di Rilascio ("Rilasciato da")</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">Conteggio tessere e incassi suddivisi per singolo punto autorizzato</p>
+                </div>
+                
+                <!-- Griglia Schede per ogni Punto di Rilascio -->
+                <div id="issuer-summary-grid" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Popolato dinamicamente via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Sezione 2: Modulo di Registrazione & Registro Tesserati -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Colonna Sinistra: Form Inserimento / Modifica (5 colonne su desktop) -->
+            <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div id="form-header" class="px-6 py-4 bg-forest-900 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="file-plus-2" class="w-5 h-5 text-forest-300"></i>
+                        <h2 id="form-title" class="font-bold text-base sm:text-lg">Nuova Tessera AAC</h2>
+                    </div>
+                    <span id="edit-badge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-900">
+                        Modifica in corso
+                    </span>
+                </div>
+
+                <form id="aac-form" class="p-6 space-y-5" novalidate>
+                    <input type="hidden" id="record-id" value="">
+
+                    <!-- Nome e Cognome -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="nome" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Nome <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" id="nome" name="nome" required placeholder="Es. Mario"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                            <p id="err-nome" class="hidden text-xs text-red-600 font-medium mt-1">Inserisci il nome.</p>
+                        </div>
+
+                        <div>
+                            <label for="cognome" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Cognome <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" id="cognome" name="cognome" required placeholder="Es. Rossi"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                            <p id="err-cognome" class="hidden text-xs text-red-600 font-medium mt-1">Inserisci il cognome.</p>
+                        </div>
+                    </div>
+
+                    <!-- Nr Tessera AAC -->
+                    <div>
+                        <label for="nrTessera" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            Nr Tessera AAC <span class="text-red-600">*</span>
+                            <span class="block text-xs font-normal text-slate-500">Numero riportato sulla tessera fisica rilasciata dall'operatore</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="hash" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" id="nrTessera" name="nrTessera" required placeholder="Es. AAC-2026-001 oppure 1045"
+                                class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-semibold placeholder-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                        </div>
+                        <p id="err-nrTessera" class="hidden text-xs text-red-600 font-medium mt-1">Inserisci il numero della tessera AAC.</p>
+                    </div>
+
+                    <!-- Rilasciato da (con aggiunta dinamica '+') -->
+                    <div>
+                        <label for="rilasciatoDa" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            Rilasciato da <span class="text-red-600">*</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <select id="rilasciatoDa" name="rilasciatoDa" required
+                                class="flex-grow px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                                <!-- Opzioni popolate dinamicamente -->
+                            </select>
+                            <button type="button" id="toggle-new-issuer-btn" onclick="toggleNewIssuerBox()"
+                                class="px-3.5 py-2.5 rounded-xl bg-forest-100 hover:bg-forest-200 text-forest-800 border border-forest-300 font-bold flex items-center justify-center transition-colors shrink-0"
+                                title="Aggiungi un nuovo punto di rilascio">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p id="err-rilasciatoDa" class="hidden text-xs text-red-600 font-medium mt-1">Seleziona chi ha rilasciato la tessera.</p>
+
+                        <!-- Box integrato per aggiungere nuovo punto di rilascio -->
+                        <div id="new-issuer-box" class="hidden mt-3 p-3.5 bg-forest-50 rounded-xl border border-forest-200 space-y-2.5">
+                            <label for="new-issuer-name" class="block text-xs font-bold text-forest-900 uppercase tracking-wide">
+                                Nuovo Punto di Rilascio
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-issuer-name" placeholder="Es. Armeria Centrale..."
+                                    class="flex-grow px-3 py-2 rounded-lg border border-forest-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-forest-600">
+                                <button type="button" onclick="addNewIssuer()"
+                                    class="px-3.5 py-2 rounded-lg bg-forest-700 hover:bg-forest-800 text-white text-xs font-bold transition-colors shrink-0">
+                                    Salva
+                                </button>
+                                <button type="button" onclick="toggleNewIssuerBox(false)"
+                                    class="px-2.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-colors shrink-0">
+                                    Chiudi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tesserato Federcaccia (Sì / No) -->
+                    <div>
+                        <span class="block text-sm font-semibold text-slate-700 mb-2">
+                            Tesserato Federcaccia <span class="text-red-600">*</span>
+                        </span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="federcaccia" value="Sì" class="peer sr-only" onchange="updatePriceCalculation()">
+                                <div class="p-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-forest-600 peer-checked:bg-forest-50 peer-checked:text-forest-900 transition-all flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="check-circle" class="w-5 h-5 text-forest-600"></i>
+                                        <span class="font-bold text-sm">Sì</span>
+                                    </div>
+                                    <span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-forest-700">€ 40,00</span>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer">
+                                <input type="radio" name="federcaccia" value="No" class="peer sr-only" onchange="updatePriceCalculation()">
+                                <div class="p-3 rounded-xl border-2 border-slate-200 bg-slate-50 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:text-amber-950 transition-all flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="x-circle" class="w-5 h-5 text-amber-600"></i>
+                                        <span class="font-bold text-sm">No</span>
+                                    </div>
+                                    <span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-amber-700">€ 45,00</span>
+                                </div>
+                            </label>
+                        </div>
+                        <p id="err-federcaccia" class="hidden text-xs text-red-600 font-medium mt-1.5">Seleziona se è tesserato Federcaccia (Sì o No).</p>
+                    </div>
+
+                    <!-- Box Calcolo Automatico Cifra Versata -->
+                    <div class="p-4 rounded-xl bg-slate-900 text-white flex items-center justify-between border border-slate-800 shadow-inner">
+                        <div>
+                            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Cifra Versata (Automatica)</span>
+                            <span id="price-note" class="text-xs text-slate-300">Seleziona stato Federcaccia</span>
+                        </div>
+                        <div class="text-right">
+                            <span id="cifra-versata-display" class="text-2xl font-extrabold text-emerald-400">€ 0,00</span>
+                        </div>
+                    </div>
+
+                    <!-- Cellulare & Email -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="cellulare" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Cellulare <span class="text-red-600">*</span>
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <i data-lucide="phone" class="w-4 h-4"></i>
+                                </div>
+                                <input type="tel" id="cellulare" name="cellulare" required placeholder="Es. 333 1234567"
+                                    class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                            </div>
+                            <p id="err-cellulare" class="hidden text-xs text-red-600 font-medium mt-1">Inserisci un numero di cellulare valido.</p>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Email <span class="text-xs font-normal text-slate-500">(Facoltativa)</span>
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </div>
+                                <input type="email" id="email" name="email" placeholder="Es. mario@email.it"
+                                    class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-all">
+                            </div>
+                            <p id="err-email" class="hidden text-xs text-red-600 font-medium mt-1">Formato email non valido.</p>
+                        </div>
+                    </div>
+
+                    <!-- Pulsanti Azione Modulo -->
+                    <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                        <button type="submit" id="submit-btn"
+                            class="flex-grow inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-forest-700 hover:bg-forest-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer">
+                            <i data-lucide="save" class="w-5 h-5"></i>
+                            <span id="submit-btn-text">Registra Tessera</span>
+                        </button>
+
+                        <button type="button" id="cancel-edit-btn" onclick="resetForm()"
+                            class="hidden inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-sm transition-all">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <span>Annulla</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Colonna Destra: Registro Completo Tesserati (7 colonne su desktop) -->
+            <section class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="users" class="w-5 h-5 text-forest-700"></i>
+                        <h2 class="font-bold text-slate-800 text-base sm:text-lg">Registro Tesserati AAC</h2>
+                        <span id="filtered-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 text-forest-800">
+                            0
+                        </span>
+                    </div>
+
+                    <button type="button" onclick="confirmClearAll()" class="text-xs font-semibold text-red-600 hover:text-red-800 inline-flex items-center gap-1 self-start sm:self-auto">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Svuota registro</span>
+                    </button>
+                </div>
+
+                <!-- Barra Filtri e Ricerca -->
+                <div class="p-4 bg-white border-b border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div class="sm:col-span-7 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </div>
+                        <input type="text" id="search-input" oninput="renderRecords()" placeholder="Cerca nome, cognome, nr tessera o cellulare..."
+                            class="w-full pl-10 pr-3.5 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-600">
+                    </div>
+
+                    <div class="sm:col-span-5">
+                        <select id="filter-issuer" onchange="renderRecords()"
+                            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-forest-600">
+                            <option value="ALL">Tutti i punti di rilascio</option>
+                            <!-- Popolato dinamicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabella Responsive -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                <th class="py-3.5 px-4">Tesserato</th>
+                                <th class="py-3.5 px-4">Nr Tessera</th>
+                                <th class="py-3.5 px-4">Rilasciato da</th>
+                                <th class="py-3.5 px-4">FIdC / Quota</th>
+                                <th class="py-3.5 px-4 text-right">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody" class="divide-y divide-slate-200 text-sm">
+                            <!-- Righe generate dinamicamente via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Stato Vuoto -->
+                <div id="empty-state" class="hidden py-12 px-6 text-center">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                        <i data-lucide="folder-open" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Nessuna tessera trovata</h3>
+                    <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                        Compila il modulo a fianco per registrare la prima tessera AAC oppure modifica i filtri di ricerca.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p class="font-medium text-slate-700">Federcaccia Toscana - Unione Cacciatori Toscani (UCT) &bull; Registro Tessere AAC</p>
+            <p>Usa <strong>Backup / Ripristina</strong> per trasferire l'archivio tra dispositivi diversi.</p>
+        </div>
+    </footer>
+
+    <!-- Logica Applicativa JavaScript -->
+    <script>
+        // Chiavi di salvataggio su localStorage
+        const STORAGE_KEY_RECORDS = 'aac_tessere_records_v1';
+        const STORAGE_KEY_ISSUERS = 'aac_tessere_issuers_v1';
+        const LOGO_FILENAME = 'FEDERCACCIA UCT.jpg';
+
+        // Punti di rilascio predefiniti richiesti
+        const DEFAULT_ISSUERS = [
+            'Quagliodromo',
+            'Sede',
+            'Armeria Lo Stellino'
+        ];
+
+        // Stato globale dell'applicazione
+        let records = [];
+        let issuers = [];
+        let confirmCallback = null;
+        let deferredInstallPrompt = null;
+        let loadedLogoDataUrl = null; // DataURL del logo per PDF e icone PWA
+
+        // Cattura evento nativo di installazione PWA (Chrome / Edge / Android)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const nativeBanner = document.getElementById('native-install-banner');
+            if (nativeBanner) nativeBanner.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            closeInstallModal();
+            showToast('App Tessere AAC installata con successo sul dispositivo!', 'success');
+        });
+
+        // Inizializzazione al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataFromStorage();
+            populateIssuerSelects();
+            updateDashboard();
+            renderRecords();
+            initLogoAndPWA();
+            lucide.createIcons();
+
+            // Gestione invio form
+            document.getElementById('aac-form').addEventListener('submit', handleFormSubmit);
+
+            // Gestione pulsante conferma modale
+            document.getElementById('confirm-ok').addEventListener('click', () => {
+                if (typeof confirmCallback === 'function') {
+                    confirmCallback();
+                }
+                closeConfirmModal();
+            });
+
+            document.getElementById('confirm-cancel').addEventListener('click', closeConfirmModal);
+        });
+
+        // Caricamento logo su Canvas per generare icone PWA 512x512, Favicon e DataURL per PDF
+        function initLogoAndPWA() {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    // 1. Generazione icona quadrata 512x512 con bordo verde istituzionale e sfondo bianco
+                    const icon512 = renderAppIconCanvas(img, 512);
+                    const icon192 = renderAppIconCanvas(img, 192);
+
+                    // 2. DataURL pulito per inserimento diretto nel PDF jsPDF
+                    const pdfCanvas = document.createElement('canvas');
+                    pdfCanvas.width = img.naturalWidth || 250;
+                    pdfCanvas.height = img.naturalHeight || 250;
+                    const pCtx = pdfCanvas.getContext('2d');
+                    pCtx.fillStyle = '#ffffff';
+                    pCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+                    pCtx.drawImage(img, 0, 0);
+                    loadedLogoDataUrl = pdfCanvas.toDataURL('image/jpeg', 0.92);
+
+                    applyPWAMetadata(icon192, icon512);
+                } catch (err) {
+                    const fallback512 = renderFallbackIconCanvas(512);
+                    const fallback192 = renderFallbackIconCanvas(192);
+                    applyPWAMetadata(fallback192, fallback512);
+                }
+            };
+            img.onerror = () => {
+                const fallback512 = renderFallbackIconCanvas(512);
+                const fallback192 = renderFallbackIconCanvas(192);
+                applyPWAMetadata(fallback192, fallback512);
+            };
+            img.src = LOGO_FILENAME;
+        }
+
+        function renderAppIconCanvas(img, size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Sfondo bianco arrotondato con bordo verde bosco #1b4332
+            ctx.fillStyle = '#1b4332';
+            ctx.fillRect(0, 0, size, size);
+
+            const pad = Math.round(size * 0.06);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(pad, pad, size - pad * 2, size - pad * 2, Math.round(size * 0.16));
+            ctx.fill();
+
+            // Disegna logo centrato mantenendo proporzioni
+            const innerPad = Math.round(size * 0.11);
+            const availW = size - innerPad * 2;
+            const availH = size - innerPad * 2;
+            const ratio = Math.min(availW / img.naturalWidth, availH / img.naturalHeight);
+            const drawW = img.naturalWidth * ratio;
+            const drawH = img.naturalHeight * ratio;
+            const offsetX = (size - drawW) / 2;
+            const offsetY = (size - drawH) / 2;
+
+            ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+            return canvas.toDataURL('image/png');
+        }
+
+        function renderFallbackIconCanvas(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1b4332';
+            ctx.fillRect(0, 0, size, size);
+
+            ctx.strokeStyle = '#e9c46a';
+            ctx.lineWidth = Math.round(size * 0.04);
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#e9c46a';
+            ctx.font = `800 ${Math.round(size * 0.22)}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('FIdC', size / 2, size * 0.42);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `700 ${Math.round(size * 0.15)}px Inter, sans-serif`;
+            ctx.fillText('UCT - AAC', size / 2, size * 0.65);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        function applyPWAMetadata(icon192Url, icon512Url) {
+            const appleIcon = document.getElementById('apple-touch-icon-link');
+            const favIcon = document.getElementById('favicon-link');
+            if (appleIcon) appleIcon.href = icon512Url;
+            if (favIcon) favIcon.href = icon192Url;
+
+            const startUrl = window.location.href.split('#')[0];
+            const manifestObj = {
+                name: 'Tessere AAC - Federcaccia Toscana UCT',
+                short_name: 'Tessere AAC',
+                description: 'Gestione e rilascio tessere Area Addestramento Cani - Federcaccia Toscana UCT',
+                start_url: startUrl,
+                scope: './',
+                display: 'standalone',
+                orientation: 'any',
+                theme_color: '#1b4332',
+                background_color: '#f4f6f4',
+                icons: [
+                    { src: icon192Url, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+                    { src: icon512Url, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            const manifestLink = document.getElementById('pwa-manifest-link');
+            if (manifestLink) manifestLink.href = manifestUrl;
+
+            // Registrazione Service Worker inline per abilitare installazione PWA
+            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', (e) => {});
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                navigator.serviceWorker.register(swUrl).catch(() => {});
+            }
+        }
+
+        // Gestione clic sul pulsante "Installa App / Desktop"
+        function handleInstallButtonClick() {
+            if (deferredInstallPrompt) {
+                triggerNativeInstall();
+            } else {
+                openInstallModal();
+            }
+        }
+
+        async function triggerNativeInstall() {
+            if (!deferredInstallPrompt) {
+                openInstallModal();
+                return;
+            }
+            deferredInstallPrompt.prompt();
+            const choiceResult = await deferredInstallPrompt.userChoice;
+            if (choiceResult && choiceResult.outcome === 'accepted') {
+                deferredInstallPrompt = null;
+            }
+        }
+
+        function detectDeviceOS() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+            if (/android/i.test(ua)) return 'android';
+            return 'desktop';
+        }
+
+        function openInstallModal() {
+            const modal = document.getElementById('install-modal');
+            const nativeBanner = document.getElementById('native-install-banner');
+            if (deferredInstallPrompt) {
+                nativeBanner.classList.remove('hidden');
+            } else {
+                nativeBanner.classList.add('hidden');
+            }
+
+            switchInstallGuide(detectDeviceOS());
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeInstallModal() {
+            const modal = document.getElementById('install-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function switchInstallGuide(os) {
+            ['android', 'ios', 'desktop'].forEach(key => {
+                const tab = document.getElementById(`tab-os-${key}`);
+                const content = document.getElementById(`guide-content-${key}`);
+                if (key === os) {
+                    tab.className = 'py-2 px-2.5 rounded-xl text-xs font-bold border border-forest-900 bg-forest-900 text-white transition-all flex items-center justify-center gap-1.5 shadow-sm';
+                    content.classList.remove('hidden');
+                } else {
+                    tab.className = 'py-2 px-2.5 rounded-xl text-xs font-bold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5';
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Scarica file collegamento .url per Desktop Windows/Mac
+        function downloadDesktopShortcut() {
+            const currentUrl = window.location.href;
+            const shortcutContent = `[InternetShortcut]\r\nURL=${currentUrl}\r\nIconIndex=0\r\n`;
+            const blob = new Blob([shortcutContent], { type: 'application/internet-shortcut' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Registro Tessere AAC - Federcaccia UCT.url';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Collegamento Desktop scaricato! Trascinalo sul tuo Desktop.', 'success');
+        }
+
+        // Copia URL negli appunti (compatibile iFrame)
+        function copyAppUrl() {
+            const currentUrl = window.location.href;
+            const tempInput = document.createElement('input');
+            tempInput.value = currentUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast('Link dell\'app copiato negli appunti!', 'success');
+            } catch (err) {
+                showToast('Impossibile copiare automaticamente il link.', 'error');
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // Caricamento dati da localStorage
+        function loadDataFromStorage() {
+            try {
+                const savedRecords = localStorage.getItem(STORAGE_KEY_RECORDS);
+                records = savedRecords ? JSON.parse(savedRecords) : [];
+
+                const savedIssuers = localStorage.getItem(STORAGE_KEY_ISSUERS);
+                if (savedIssuers) {
+                    const parsedIssuers = JSON.parse(savedIssuers);
+                    // Unisce predefiniti e personalizzati evitando duplicati
+                    issuers = Array.from(new Set([...DEFAULT_ISSUERS, ...parsedIssuers]));
+                } else {
+                    issuers = [...DEFAULT_ISSUERS];
+                    saveIssuersToStorage();
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento dati da localStorage:', e);
+                records = [];
+                issuers = [...DEFAULT_ISSUERS];
+            }
+        }
+
+        function saveRecordsToStorage() {
+            localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
+        }
+
+        function saveIssuersToStorage() {
+            localStorage.setItem(STORAGE_KEY_ISSUERS, JSON.stringify(issuers));
+        }
+
+        // Popola i menu a tendina "Rilasciato da" (Form + Filtro)
+        function populateIssuerSelects(selectedValue = '') {
+            const formSelect = document.getElementById('rilasciatoDa');
+            const filterSelect = document.getElementById('filter-issuer');
+            const currentFilter = filterSelect.value;
+
+            // Select nel form
+            formSelect.innerHTML = '<option value="" disabled selected>-- Seleziona punto di rilascio --</option>';
+            issuers.forEach(issuer => {
+                const opt = document.createElement('option');
+                opt.value = issuer;
+                opt.textContent = issuer;
+                if (issuer === selectedValue) {
+                    opt.selected = true;
+                }
+                formSelect.appendChild(opt);
+            });
+
+            // Select nel filtro di ricerca
+            filterSelect.innerHTML = '<option value="ALL">Tutti i punti di rilascio</option>';
+            issuers.forEach(issuer => {
+                const opt = document.createElement('option');
+                opt.value = issuer;
+                opt.textContent = issuer;
+                if (issuer === currentFilter) {
+                    opt.selected = true;
+                }
+                filterSelect.appendChild(opt);
+            });
+        }
+
+        // Mostra/Nasconde il riquadro per aggiungere un nuovo punto di rilascio
+        function toggleNewIssuerBox(forceState) {
+            const box = document.getElementById('new-issuer-box');
+            const input = document.getElementById('new-issuer-name');
+            const shouldShow = typeof forceState === 'boolean' ? forceState : box.classList.contains('hidden');
+
+            if (shouldShow) {
+                box.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        // Aggiunge un nuovo punto di rilascio personalizzato
+        function addNewIssuer() {
+            const input = document.getElementById('new-issuer-name');
+            const rawName = input.value.trim();
+
+            if (!rawName) {
+                showToast('Inserisci il nome del nuovo punto di rilascio.', 'error');
+                input.focus();
+                return;
+            }
+
+            // Controlla se esiste già (case-insensitive)
+            const existing = issuers.find(i => i.toLowerCase() === rawName.toLowerCase());
+            if (existing) {
+                populateIssuerSelects(existing);
+                toggleNewIssuerBox(false);
+                showToast(`"${existing}" è già presente nella lista ed è stato selezionato.`, 'info');
+                return;
+            }
+
+            issuers.push(rawName);
+            saveIssuersToStorage();
+            populateIssuerSelects(rawName);
+            updateDashboard();
+            toggleNewIssuerBox(false);
+            showToast(`Punto di rilascio "${rawName}" aggiunto con successo!`, 'success');
+        }
+
+        // Calcolo automatico della Cifra Versata in base a Federcaccia (Sì = € 40,00 | No = € 45,00)
+        function updatePriceCalculation() {
+            const selectedRadio = document.querySelector('input[name="federcaccia"]:checked');
+            const displayEl = document.getElementById('cifra-versata-display');
+            const noteEl = document.getElementById('price-note');
+
+            if (!selectedRadio) {
+                displayEl.textContent = '€ 0,00';
+                noteEl.textContent = 'Seleziona stato Federcaccia';
+                return 0;
+            }
+
+            if (selectedRadio.value === 'Sì') {
+                displayEl.textContent = '€ 40,00';
+                noteEl.textContent = 'Tariffa agevolata Tesserato Federcaccia';
+                return 40;
+            } else {
+                displayEl.textContent = '€ 45,00';
+                noteEl.textContent = 'Tariffa ordinaria Non Tesserato Federcaccia';
+                return 45;
+            }
+        }
+
+        // Validazione e salvataggio del modulo
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            // Pulizia errori precedenti
+            clearValidationErrors();
+
+            const recordId = document.getElementById('record-id').value;
+            const nome = document.getElementById('nome').value.trim();
+            const cognome = document.getElementById('cognome').value.trim();
+            const nrTessera = document.getElementById('nrTessera').value.trim();
+            const rilasciatoDa = document.getElementById('rilasciatoDa').value;
+            const federcacciaRadio = document.querySelector('input[name="federcaccia"]:checked');
+            const cellulare = document.getElementById('cellulare').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            let isValid = true;
+
+            if (!nome) {
+                showFieldError('nome', 'err-nome');
+                isValid = false;
+            }
+
+            if (!cognome) {
+                showFieldError('cognome', 'err-cognome');
+                isValid = false;
+            }
+
+            if (!nrTessera) {
+                showFieldError('nrTessera', 'err-nrTessera', 'Inserisci il numero della tessera AAC.');
+                isValid = false;
+            } else {
+                // Controllo duplicato numero tessera (escludendo il record corrente in caso di modifica)
+                const duplicateCard = records.find(r => r.nrTessera.toLowerCase() === nrTessera.toLowerCase() && r.id !== recordId);
+                if (duplicateCard) {
+                    showFieldError('nrTessera', 'err-nrTessera', `Attenzione: tessera n. "${nrTessera}" già assegnata a ${duplicateCard.nome} ${duplicateCard.cognome}.`);
+                    isValid = false;
+                }
+            }
+
+            if (!rilasciatoDa) {
+                showFieldError('rilasciatoDa', 'err-rilasciatoDa');
+                isValid = false;
+            }
+
+            if (!federcacciaRadio) {
+                document.getElementById('err-federcaccia').classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (!cellulare || cellulare.replace(/\D/g, '').length < 6) {
+                showFieldError('cellulare', 'err-cellulare');
+                isValid = false;
+            }
+
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showFieldError('email', 'err-email');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                showToast('Controlla i campi obbligatori evidenziati in rosso.', 'error');
+                return;
+            }
+
+            const federcaccia = federcacciaRadio.value;
+            const cifraVersata = federcaccia === 'Sì' ? 40 : 45;
+
+            if (recordId) {
+                // Aggiornamento record esistente
+                const index = records.findIndex(r => r.id === recordId);
+                if (index !== -1) {
+                    records[index] = {
+                        ...records[index],
+                        nome,
+                        cognome,
+                        nrTessera,
+                        rilasciatoDa,
+                        federcaccia,
+                        cellulare,
+                        email,
+                        cifraVersata,
+                        updatedAt: new Date().toISOString()
+                    };
+                    showToast(`Tessera n. ${nrTessera} aggiornata correttamente!`, 'success');
+                }
+            } else {
+                // Nuovo inserimento
+                const newRecord = {
+                    id: 'aac_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                    nome,
+                    cognome,
+                    nrTessera,
+                    rilasciatoDa,
+                    federcaccia,
+                    cellulare,
+                    email,
+                    cifraVersata,
+                    createdAt: new Date().toISOString()
+                };
+                records.unshift(newRecord);
+                showToast(`Tessera n. ${nrTessera} registrata (${formatCurrency(cifraVersata)})!`, 'success');
+            }
+
+            saveRecordsToStorage();
+            resetForm();
+            updateDashboard();
+            renderRecords();
+        }
+
+        function showFieldError(inputId, errorId, customMsg) {
+            const inputEl = document.getElementById(inputId);
+            const errorEl = document.getElementById(errorId);
+            if (inputEl) {
+                inputEl.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+            }
+            if (errorEl) {
+                if (customMsg) errorEl.textContent = customMsg;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function clearValidationErrors() {
+            const inputs = ['nome', 'cognome', 'nrTessera', 'rilasciatoDa', 'cellulare', 'email'];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+            });
+            const errors = ['err-nome', 'err-cognome', 'err-nrTessera', 'err-rilasciatoDa', 'err-federcaccia', 'err-cellulare', 'err-email'];
+            errors.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        // Ripristina il modulo allo stato iniziale
+        function resetForm() {
+            document.getElementById('aac-form').reset();
+            document.getElementById('record-id').value = '';
+            clearValidationErrors();
+            updatePriceCalculation();
+            populateIssuerSelects('');
+
+            // Ripristina UI modalità inserimento
+            document.getElementById('form-title').textContent = 'Nuova Tessera AAC';
+            document.getElementById('edit-badge').classList.add('hidden');
+            document.getElementById('submit-btn-text').textContent = 'Registra Tessera';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
+
+        // Carica un record nel form per la modifica
+        function editRecord(id) {
+            const record = records.find(r => r.id === id);
+            if (!record) return;
+
+            clearValidationErrors();
+            document.getElementById('record-id').value = record.id;
+            document.getElementById('nome').value = record.nome;
+            document.getElementById('cognome').value = record.cognome;
+            document.getElementById('nrTessera').value = record.nrTessera;
+
+            // Assicura che il punto di rilascio sia presente nella lista
+            if (!issuers.includes(record.rilasciatoDa)) {
+                issuers.push(record.rilasciatoDa);
+                saveIssuersToStorage();
+            }
+            populateIssuerSelects(record.rilasciatoDa);
+
+            const radios = document.querySelectorAll('input[name="federcaccia"]');
+            radios.forEach(r => {
+                r.checked = (r.value === record.federcaccia);
+            });
+            updatePriceCalculation();
+
+            document.getElementById('cellulare').value = record.cellulare;
+            document.getElementById('email').value = record.email || '';
+
+            // Aggiorna UI modalità modifica
+            document.getElementById('form-title').textContent = `Modifica Tessera #${record.nrTessera}`;
+            document.getElementById('edit-badge').classList.remove('hidden');
+            document.getElementById('submit-btn-text').textContent = 'Salva Modifiche';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+            // Scorri verso il form su mobile
+            document.getElementById('form-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Eliminazione singolo record con conferma
+        function deleteRecord(id) {
+            const record = records.find(r => r.id === id);
+            if (!record) return;
+
+            openConfirmModal(
+                'Elimina Tessera AAC',
+                `Sei sicuro di voler eliminare la tessera n. "${record.nrTessera}" intestata a ${record.nome} ${record.cognome}? L'operazione aggiornerà automaticamente i totali.`,
+                () => {
+                    records = records.filter(r => r.id !== id);
+                    saveRecordsToStorage();
+                    if (document.getElementById('record-id').value === id) {
+                        resetForm();
+                    }
+                    updateDashboard();
+                    renderRecords();
+                    showToast(`Tessera n. ${record.nrTessera} eliminata.`, 'info');
+                }
+            );
+        }
+
+        // Svuota tutto il registro
+        function confirmClearAll() {
+            if (records.length === 0) {
+                showToast('Il registro è già vuoto.', 'info');
+                return;
+            }
+            openConfirmModal(
+                'Svuota intero registro',
+                `Stai per eliminare tutte le ${records.length} tessere registrate. Ti consigliamo di fare prima un Backup JSON o CSV. Vuoi procedere comunque?`,
+                () => {
+                    records = [];
+                    saveRecordsToStorage();
+                    resetForm();
+                    updateDashboard();
+                    renderRecords();
+                    showToast('Registro svuotato completamente.', 'info');
+                }
+            );
+        }
+
+        // Aggiorna Dashboard KPI e Resoconto per ciascun Punto di Rilascio
+        function updateDashboard() {
+            const totalCards = records.length;
+            const totalRevenue = records.reduce((sum, r) => sum + Number(r.cifraVersata || 0), 0);
+            const fidcYesCount = records.filter(r => r.federcaccia === 'Sì').length;
+            const fidcNoCount = records.filter(r => r.federcaccia === 'No').length;
+
+            document.getElementById('stat-total-cards').textContent = totalCards;
+            document.getElementById('stat-total-revenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('stat-fidc-yes').textContent = fidcYesCount;
+            document.getElementById('stat-fidc-no').textContent = fidcNoCount;
+
+            // Calcolo aggregato per ogni punto di rilascio
+            // Include sia tutti quelli configurati in `issuers` sia eventuali presenti nei record
+            const allKnownIssuers = Array.from(new Set([...issuers, ...records.map(r => r.rilasciatoDa)]));
+            const summaryGrid = document.getElementById('issuer-summary-grid');
+            summaryGrid.innerHTML = '';
+
+            allKnownIssuers.forEach(issuerName => {
+                const issuerRecords = records.filter(r => r.rilasciatoDa === issuerName);
+                const count = issuerRecords.length;
+                const amount = issuerRecords.reduce((sum, r) => sum + Number(r.cifraVersata || 0), 0);
+                const fidcCount = issuerRecords.filter(r => r.federcaccia === 'Sì').length;
+                const nonFidcCount = count - fidcCount;
+                const percentage = totalCards > 0 ? Math.round((count / totalCards) * 100) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white hover:border-forest-300 hover:shadow-sm transition-all flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-forest-600 shrink-0"></span>
+                                <h4 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">${escapeHTML(issuerName)}</h4>
+                            </div>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-forest-100 text-forest-800 shrink-0">
+                                ${percentage}%
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 my-3 pt-3 border-t border-slate-200/80">
+                            <div>
+                                <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tessere Rilasciate</span>
+                                <span class="text-xl font-extrabold text-slate-900">${count}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Totale Incassato</span>
+                                <span class="text-xl font-extrabold text-forest-700">${formatCurrency(amount)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                        <span>FIdC (€40): <strong class="text-slate-700">${fidcCount}</strong></span>
+                        <span>Non FIdC (€45): <strong class="text-slate-700">${nonFidcCount}</strong></span>
+                    </div>
+                `;
+                summaryGrid.appendChild(card);
+            });
+        }
+
+        // Renderizza la tabella dei tesserati filtrata
+        function renderRecords() {
+            const searchTerm = document.getElementById('search-input').value.trim().toLowerCase();
+            const issuerFilter = document.getElementById('filter-issuer').value;
+            const tbody = document.getElementById('records-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const countBadge = document.getElementById('filtered-count-badge');
+
+            const filtered = records.filter(r => {
+                const matchesIssuer = issuerFilter === 'ALL' || r.rilasciatoDa === issuerFilter;
+                const matchesSearch = !searchTerm ||
+                    r.nome.toLowerCase().includes(searchTerm) ||
+                    r.cognome.toLowerCase().includes(searchTerm) ||
+                    `${r.nome} ${r.cognome}`.toLowerCase().includes(searchTerm) ||
+                    r.nrTessera.toLowerCase().includes(searchTerm) ||
+                    r.cellulare.toLowerCase().includes(searchTerm);
+
+                return matchesIssuer && matchesSearch;
+            });
+
+            countBadge.textContent = filtered.length;
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/90 transition-colors';
+
+                const isFidc = record.federcaccia === 'Sì';
+                const badgeClass = isFidc
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-100 text-amber-800 border-amber-200';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 align-top">
+                        <div class="font-bold text-slate-900">${escapeHTML(record.cognome)} ${escapeHTML(record.nome)}</div>
+                        <div class="text-xs text-slate-500 mt-0.5 flex flex-col gap-0.5">
+                            <span class="inline-flex items-center gap-1">
+                                <i data-lucide="phone" class="w-3 h-3 text-slate-400"></i>
+                                ${escapeHTML(record.cellulare)}
+                            </span>
+                            ${record.email ? `
+                                <span class="inline-flex items-center gap-1 text-slate-400">
+                                    <i data-lucide="mail" class="w-3 h-3"></i>
+                                    ${escapeHTML(record.email)}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 align-top">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold bg-slate-100 text-slate-800 border border-slate-200">
+                            ${escapeHTML(record.nrTessera)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 align-top">
+                        <span class="text-xs font-semibold text-slate-700 bg-forest-50 border border-forest-200 px-2.5 py-1 rounded-lg inline-block">
+                            ${escapeHTML(record.rilasciatoDa)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 align-top">
+                        <div class="font-extrabold text-slate-900">${formatCurrency(record.cifraVersata)}</div>
+                        <span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${badgeClass}">
+                            FIdC: ${escapeHTML(record.federcaccia)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1.5">
+                            <button type="button" onclick="editRecord('${record.id}')"
+                                class="p-2 rounded-lg text-slate-600 hover:text-forest-700 hover:bg-forest-50 border border-transparent hover:border-forest-200 transition-colors"
+                                title="Modifica record">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" onclick="deleteRecord('${record.id}')"
+                                class="p-2 rounded-lg text-slate-600 hover:text-red-700 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                                title="Elimina record">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Esportazione professionale in Excel (.xlsx) con 2 fogli: "Elenco Tessere" e "Resoconto Incassi"
+        function exportExcel() {
+            if (records.length === 0) {
+                showToast('Nessuna tessera registrata da esportare in Excel.', 'info');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                showToast('Libreria Excel non caricata. Controlla la connessione internet.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+
+                // --- FOGLIO 1: ELENCO TESSERE ---
+                const elencoRows = records.map((r, index) => ({
+                    'N.': index + 1,
+                    'Nr Tessera AAC': r.nrTessera || '',
+                    'Cognome': r.cognome || '',
+                    'Nome': r.nome || '',
+                    'Rilasciato da': r.rilasciatoDa || '',
+                    'Tesserato Federcaccia': r.federcaccia || '',
+                    'Cifra Versata (€)': Number(r.cifraVersata || 0),
+                    'Cellulare': r.cellulare || '',
+                    'Email': r.email || '',
+                    'Data Registrazione': r.createdAt ? new Date(r.createdAt).toLocaleString('it-IT') : ''
+                }));
+
+                const wsElenco = XLSX.utils.json_to_sheet(elencoRows);
+
+                // Aggiunta riga Totale in fondo al Foglio 1 con formula SUM
+                const lastDataRow = elencoRows.length + 1;
+                const totalRowIdx = lastDataRow + 2;
+                XLSX.utils.sheet_add_aoa(wsElenco, [
+                    ['', '', '', '', 'TOTALE TESSERE:', { t: 'n', f: `COUNTA(B2:B${lastDataRow})` }, { t: 'n', f: `SUM(G2:G${lastDataRow})` }, '', '', '']
+                ], { origin: `A${totalRowIdx}` });
+
+                // Formattazione valuta e larghezza colonne Foglio 1
+                for (let r = 2; r <= lastDataRow; r++) {
+                    const cellRef = `G${r}`;
+                    if (wsElenco[cellRef]) wsElenco[cellRef].z = '€ #,##0.00';
+                }
+                if (wsElenco[`G${totalRowIdx}`]) wsElenco[`G${totalRowIdx}`].z = '€ #,##0.00';
+
+                wsElenco['!cols'] = [
+                    { wch: 6 },  // N.
+                    { wch: 18 }, // Nr Tessera
+                    { wch: 18 }, // Cognome
+                    { wch: 18 }, // Nome
+                    { wch: 24 }, // Rilasciato da
+                    { wch: 22 }, // Federcaccia
+                    { wch: 18 }, // Cifra Versata
+                    { wch: 16 }, // Cellulare
+                    { wch: 26 }, // Email
+                    { wch: 20 }  // Data
+                ];
+
+                XLSX.utils.book_append_sheet(wb, wsElenco, 'Elenco Tessere');
+
+                // --- FOGLIO 2: RESOCONTO INCASSI PER PUNTO DI RILASCIO ---
+                const allKnownIssuers = Array.from(new Set([...issuers, ...records.map(r => r.rilasciatoDa)]));
+                const summaryHeader = [
+                    ['RESOCONTO CONTABILE RILASCIO TESSERE AAC'],
+                    [`Generato il: ${new Date().toLocaleString('it-IT')}`],
+                    [],
+                    ['Punto di Rilascio', 'Tesserati FIdC (€ 40)', 'Non Tesserati FIdC (€ 45)', 'Totale Tessere Rilasciate', 'Incasso FIdC (€)', 'Incasso Non FIdC (€)', 'Totale Incassato (€)']
+                ];
+
+                const summaryDataRows = allKnownIssuers.map((issuerName, idx) => {
+                    const rowNum = idx + 5; // Riga Excel (1-indexed, intestazione alla riga 4)
+                    const issuerRecords = records.filter(r => r.rilasciatoDa === issuerName);
+                    const fidcCount = issuerRecords.filter(r => r.federcaccia === 'Sì').length;
+                    const nonFidcCount = issuerRecords.filter(r => r.federcaccia === 'No').length;
+
+                    return [
+                        issuerName,
+                        fidcCount,
+                        nonFidcCount,
+                        { t: 'n', f: `B${rowNum}+C${rowNum}` },
+                        { t: 'n', f: `B${rowNum}*40` },
+                        { t: 'n', f: `C${rowNum}*45` },
+                        { t: 'n', f: `E${rowNum}+F${rowNum}` }
+                    ];
+                });
+
+                const firstSummaryRow = 5;
+                const lastSummaryRow = firstSummaryRow + summaryDataRows.length - 1;
+                const grandTotalRow = lastSummaryRow + 1;
+
+                const summaryTotalRow = [
+                    'TOTALE COMPLESSIVO',
+                    { t: 'n', f: `SUM(B${firstSummaryRow}:B${lastSummaryRow})` },
+                    { t: 'n', f: `SUM(C${firstSummaryRow}:C${lastSummaryRow})` },
+                    { t: 'n', f: `SUM(D${firstSummaryRow}:D${lastSummaryRow})` },
+                    { t: 'n', f: `SUM(E${firstSummaryRow}:E${lastSummaryRow})` },
+                    { t: 'n', f: `SUM(F${firstSummaryRow}:F${lastSummaryRow})` },
+                    { t: 'n', f: `SUM(G${firstSummaryRow}:G${lastSummaryRow})` }
+                ];
+
+                const wsResoconto = XLSX.utils.aoa_to_sheet([
+                    ...summaryHeader,
+                    ...summaryDataRows,
+                    summaryTotalRow
+                ]);
+
+                // Formattazione valuta colonne E, F, G nel Foglio 2
+                for (let r = firstSummaryRow; r <= grandTotalRow; r++) {
+                    ['E', 'F', 'G'].forEach(col => {
+                        const ref = `${col}${r}`;
+                        if (wsResoconto[ref]) wsResoconto[ref].z = '€ #,##0.00';
+                    });
+                }
+
+                wsResoconto['!cols'] = [
+                    { wch: 28 }, // Punto di Rilascio
+                    { wch: 22 }, // Tesserati FIdC
+                    { wch: 25 }, // Non Tesserati
+                    { wch: 24 }, // Totale Tessere
+                    { wch: 18 }, // Incasso FIdC
+                    { wch: 20 }, // Incasso Non FIdC
+                    { wch: 22 }  // Totale Incassato
+                ];
+
+                XLSX.utils.book_append_sheet(wb, wsResoconto, 'Resoconto Incassi');
+
+                const dateStr = new Date().toISOString().slice(0, 10);
+                XLSX.writeFile(wb, `Registro_Tessere_AAC_${dateStr}.xlsx`);
+                showToast('File Excel (.xlsx) esportato con successo!', 'success');
+            } catch (err) {
+                console.error('Errore esportazione Excel:', err);
+                showToast('Si è verificato un errore durante la creazione del file Excel.', 'error');
+            }
+        }
+
+        // Esportazione professionale in PDF (A4 Orizzontale con Riepilogo + Elenco Dettagliato)
+        function exportPDF() {
+            if (records.length === 0) {
+                showToast('Nessuna tessera registrata da esportare in PDF.', 'info');
+                return;
+            }
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToast('Libreria PDF non caricata. Controlla la connessione internet.', 'error');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const nowStr = new Date().toLocaleString('it-IT');
+
+                // Intestazione Documento con Logo Federcaccia Toscana - UCT
+                doc.setFillColor(27, 67, 50); // Verde bosco istituzionale #1b4332
+                doc.rect(0, 0, pageWidth, 28, 'F');
+
+                // Linea oro istituzionale
+                doc.setFillColor(233, 196, 106);
+                doc.rect(0, 28, pageWidth, 1.5, 'F');
+
+                let textStartX = 14;
+                if (loadedLogoDataUrl) {
+                    // Riquadro bianco arrotondato per il logo
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(14, 3, 22, 22, 2, 2, 'F');
+                    doc.addImage(loadedLogoDataUrl, 'JPEG', 15, 4, 20, 20);
+                    textStartX = 41;
+                }
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(15);
+                doc.text('FEDERCACCIA TOSCANA - UNIONE CACCIATORI TOSCANI (UCT)', textStartX, 11);
+
+                doc.setFontSize(11);
+                doc.setTextColor(233, 196, 106);
+                doc.text('REGISTRO TESSERE AAC - AREA ADDESTRAMENTO CANI', textStartX, 17.5);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(220, 235, 228);
+                doc.text(`Resoconto contabile e elenco tesserati | Documento generato il ${nowStr}`, textStartX, 23.5);
+
+                // Sezione 1: Tabella Riepilogo per Punto di Rilascio
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('1. Resoconto per Punto di Rilascio ("Rilasciato da")', 14, 37);
+
+                const allKnownIssuers = Array.from(new Set([...issuers, ...records.map(r => r.rilasciatoDa)]));
+                let grandFidc = 0;
+                let grandNonFidc = 0;
+                let grandTotalCards = 0;
+                let grandTotalRevenue = 0;
+
+                const summaryBody = allKnownIssuers.map(issuerName => {
+                    const issuerRecords = records.filter(r => r.rilasciatoDa === issuerName);
+                    const fidcCount = issuerRecords.filter(r => r.federcaccia === 'Sì').length;
+                    const nonFidcCount = issuerRecords.filter(r => r.federcaccia === 'No').length;
+                    const count = issuerRecords.length;
+                    const amount = issuerRecords.reduce((sum, r) => sum + Number(r.cifraVersata || 0), 0);
+
+                    grandFidc += fidcCount;
+                    grandNonFidc += nonFidcCount;
+                    grandTotalCards += count;
+                    grandTotalRevenue += amount;
+
+                    return [
+                        issuerName,
+                        fidcCount.toString(),
+                        nonFidcCount.toString(),
+                        count.toString(),
+                        formatCurrency(amount)
+                    ];
+                });
+
+                summaryBody.push([
+                    'TOTALE COMPLESSIVO',
+                    grandFidc.toString(),
+                    grandNonFidc.toString(),
+                    grandTotalCards.toString(),
+                    formatCurrency(grandTotalRevenue)
+                ]);
+
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Punto di Rilascio', 'Tesserati FIdC (€ 40)', 'Non Tesserati (€ 45)', 'Totale Tessere', 'Totale Incassato']],
+                    body: summaryBody,
+                    theme: 'grid',
+                    margin: { left: 14, right: 14 },
+                    headStyles: {
+                        fillColor: [27, 67, 50],
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold',
+                        fontSize: 9
+                    },
+                    bodyStyles: {
+                        fontSize: 9,
+                        textColor: [30, 41, 59]
+                    },
+                    columnStyles: {
+                        0: { fontStyle: 'bold' },
+                        1: { halign: 'center' },
+                        2: { halign: 'center' },
+                        3: { halign: 'center', fontStyle: 'bold' },
+                        4: { halign: 'right', fontStyle: 'bold' }
+                    },
+                    didParseCell: function(data) {
+                        // Evidenzia l'ultima riga (Totale Complessivo)
+                        if (data.row.index === summaryBody.length - 1) {
+                            data.cell.styles.fillColor = [224, 237, 229];
+                            data.cell.styles.textColor = [20, 45, 34];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                });
+
+                // Sezione 2: Tabella Dettagliata di tutti i Tesserati
+                const nextY = doc.lastAutoTable.finalY + 10;
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(`2. Elenco Dettagliato Tesserati AAC (${records.length} tessere)`, 14, nextY);
+
+                const detailBody = records.map((r, idx) => [
+                    (idx + 1).toString(),
+                    r.nrTessera || '',
+                    r.cognome || '',
+                    r.nome || '',
+                    r.rilasciatoDa || '',
+                    r.federcaccia || '',
+                    formatCurrency(r.cifraVersata),
+                    r.cellulare || '',
+                    r.email || '-'
+                ]);
+
+                doc.autoTable({
+                    startY: nextY + 3,
+                    head: [['#', 'Nr Tessera', 'Cognome', 'Nome', 'Rilasciato da', 'Federcaccia', 'Quota', 'Cellulare', 'Email']],
+                    body: detailBody,
+                    theme: 'striped',
+                    margin: { left: 14, right: 14, bottom: 16 },
+                    headStyles: {
+                        fillColor: [32, 56, 45],
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold',
+                        fontSize: 8.5
+                    },
+                    bodyStyles: {
+                        fontSize: 8.5,
+                        textColor: [30, 41, 59]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10, halign: 'center' },
+                        1: { cellWidth: 28, fontStyle: 'bold' },
+                        5: { cellWidth: 22, halign: 'center' },
+                        6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }
+                    },
+                    didDrawPage: function(data) {
+                        // Numerazione pagine a piè di pagina
+                        const pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.setTextColor(120, 120, 120);
+                        doc.text(
+                            `Pagina ${data.pageNumber} di ${pageCount} - Registro Tessere AAC`,
+                            pageWidth / 2,
+                            doc.internal.pageSize.getHeight() - 7,
+                            { align: 'center' }
+                        );
+                    }
+                });
+
+                const dateStr = new Date().toISOString().slice(0, 10);
+                doc.save(`Registro_Tessere_AAC_${dateStr}.pdf`);
+                showToast('Documento PDF esportato con successo!', 'success');
+            } catch (err) {
+                console.error('Errore esportazione PDF:', err);
+                showToast('Si è verificato un errore durante la creazione del PDF.', 'error');
+            }
+        }
+
+        // Esportazione Backup JSON completo (record + punti di rilascio)
+        function exportJSON() {
+            const payload = {
+                app: 'Registro Tessere AAC',
+                exportedAt: new Date().toISOString(),
+                issuers,
+                records
+            };
+
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Backup_Tessere_AAC_${dateStr}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast('Backup JSON scaricato con successo!', 'success');
+        }
+
+        // Importazione Backup JSON
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data || !Array.isArray(data.records)) {
+                        throw new Error('Formato file non valido');
+                    }
+
+                    openConfirmModal(
+                        'Ripristina Backup JSON',
+                        `Trovate ${data.records.length} tessere nel file selezionato. Vuoi sostituire i dati attuali con quelli del backup?`,
+                        () => {
+                            records = data.records;
+                            if (Array.isArray(data.issuers)) {
+                                issuers = Array.from(new Set([...DEFAULT_ISSUERS, ...data.issuers]));
+                            }
+                            saveRecordsToStorage();
+                            saveIssuersToStorage();
+                            populateIssuerSelects();
+                            updateDashboard();
+                            renderRecords();
+                            showToast(`Ripristinate ${records.length} tessere dal backup!`, 'success');
+                        }
+                    );
+                } catch (err) {
+                    showToast('Errore: il file JSON selezionato non è valido.', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Formattazione Valuta Euro
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('it-IT', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(Number(value || 0));
+        }
+
+        // Escape HTML per sicurezza XSS
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Sistema Notifiche Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const styles = {
+                success: 'bg-forest-900 text-white border-forest-700',
+                error: 'bg-red-700 text-white border-red-600',
+                info: 'bg-slate-800 text-white border-slate-700'
+            };
+
+            const icons = {
+                success: 'check-circle',
+                error: 'alert-circle',
+                info: 'info'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl shadow-xl border ${styles[type] || styles.info} text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type] || 'info'}" class="w-5 h-5 shrink-0"></i>
+                <span class="flex-grow">${escapeHTML(message)}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Gestione Modale di Conferma
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            confirmCallback = null;
+        }
+    </script>
+</body>
+</html>
