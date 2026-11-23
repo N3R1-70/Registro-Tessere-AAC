@@ -603,7 +603,6 @@
       flex-wrap: wrap;
     }
 
-    /* Modali */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -807,7 +806,7 @@
           type="tel"
           id="phoneLookupInput"
           inputmode="numeric"
-          placeholder="Digita numero senza spazi (es. 3356688822)..."
+          placeholder="Digita numero senza spazi (es. 3331234567)..."
         />
         <button type="button" class="btn btn-primary" id="btnPhoneLookup">Cerca Telefono</button>
         <button type="button" class="btn btn-outline" id="btnClearPhoneLookup">Pulisci</button>
@@ -871,11 +870,11 @@
               id="cellulare"
               inputmode="numeric"
               required
-              placeholder="Es. 3356688822"
+              placeholder="Es. 3331234567"
               autocomplete="tel"
             />
             <div class="field-hint">
-              Inserire senza spazi (es. 3356688822 e non 335 668 8822 o 335 6688822)
+              Inserire senza spazi (es. 3331234567 e non 333 123 4567 o 333 1234567)
             </div>
           </div>
 
@@ -1282,7 +1281,6 @@
       return String(raw || "").replace(/\s+/g, "").trim();
     }
 
-    // Normalizza il numero tessera (rimuove spazi superflui e uniforma maiuscole/minuscole)
     function normalizeTesseraCode(raw) {
       return String(raw || "").replace(/\s+/g, "").trim().toUpperCase();
     }
@@ -1572,7 +1570,6 @@
         return;
       }
 
-      // 1° controllo locale immediato
       const localDup = validateTesseraUniquenessUI();
       if (localDup) {
         nrTesseraInput.focus();
@@ -1584,7 +1581,6 @@
       submitBtn.disabled = true;
 
       try {
-        // 2° controllo diretto sul database centrale (anti-concorrenza tra più postazioni)
         let dupQuery = sbClient
           .from("tessere_aac")
           .select("id, nome, cognome, rilasciato_da, nr_tessera")
@@ -1622,7 +1618,6 @@
           dataRegistrazione: existing?.dataRegistrazione || new Date().toLocaleDateString("it-IT")
         });
 
-        // 3° controllo vincolo UNIQUE PostgreSQL (codice errore 23505)
         const { error } = editId
           ? await sbClient.from("tessere_aac").update(payload).eq("id", editId)
           : await sbClient.from("tessere_aac").insert(payload);
@@ -1954,7 +1949,6 @@
             await sbClient.from("punti_rilascio").upsert(pRows, { onConflict: "nome", ignoreDuplicates: true });
           }
 
-          // Deduplica anche internamente al file JSON prima dell'invio
           const uniqueMap = new Map();
           parsed.records.forEach((r) => {
             const code = normalizeTesseraCode(r.nrTessera);
