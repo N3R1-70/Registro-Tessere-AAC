@@ -307,6 +307,24 @@
       box-shadow: 0 0 0 3px rgba(20, 83, 45, 0.12);
     }
 
+    input.input-error {
+      border-color: var(--danger) !important;
+      background-color: #fef2f2 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+    }
+
+    .field-error-msg {
+      display: none;
+      font-size: 0.8rem;
+      color: #991b1b;
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
     .field-hint {
       font-size: 0.78rem;
       color: #b45309;
@@ -819,8 +837,9 @@
           </div>
 
           <div class="form-group">
-            <label for="nrTessera">Nr Tessera AAC <span class="req">*</span></label>
+            <label for="nrTessera">Nr Tessera AAC <span class="req">*</span> <span class="opt">(Univoco)</span></label>
             <input type="text" id="nrTessera" required placeholder="Inserire numero tessera fisica" />
+            <div class="field-error-msg" id="nrTesseraError"></div>
           </div>
 
           <div class="form-group">
@@ -989,27 +1008,23 @@
         </div>
       </div>
 
-      <!-- Avviso automatico se aperta dentro WhatsApp/Facebook/Mail -->
       <div class="inapp-warning" id="inAppBrowserAlert" style="display:none;">
         <strong>⚠️ Stai aprendo il link dentro WhatsApp / Email</strong>
         Da qui non si può salvare l'icona: tocca prima i <span class="key-pill">⋮ 3 puntini in alto a destra</span> e scegli <b>"Apri nel browser"</b> (o <b>"Apri in Chrome / Safari"</b>).
       </div>
 
-      <!-- Pulsante installazione diretta con 1 clic se supportato -->
       <div id="nativeInstallBox" style="display:none; margin-bottom: 14px;">
         <button type="button" class="btn btn-primary" id="btnTriggerNativeInstall" style="width:100%; padding: 14px; font-size: 1.05rem;">
           ✅ Tocca qui per Installare Subito
         </button>
       </div>
 
-      <!-- Selettore dispositivo (preselezionato in automatico) -->
       <div class="device-switch-tabs" id="deviceTabs">
         <button type="button" class="tab-btn" data-target="guide-android">Android / Samsung</button>
         <button type="button" class="tab-btn" data-target="guide-ios">iPhone / iPad</button>
         <button type="button" class="tab-btn" data-target="guide-pc">Computer (PC)</button>
       </div>
 
-      <!-- GUIDA ANDROID / SAMSUNG -->
       <div id="guide-android" class="device-guide">
         <div class="big-step">
           <div class="step-num">1</div>
@@ -1025,7 +1040,6 @@
         </div>
       </div>
 
-      <!-- GUIDA IPHONE / IPAD -->
       <div id="guide-ios" class="device-guide" style="display:none;">
         <div class="big-step">
           <div class="step-num">1</div>
@@ -1041,7 +1055,6 @@
         </div>
       </div>
 
-      <!-- GUIDA COMPUTER PC / MAC -->
       <div id="guide-pc" class="device-guide" style="display:none;">
         <div class="big-step">
           <div class="step-num">1</div>
@@ -1057,7 +1070,6 @@
         </div>
       </div>
 
-      <!-- Condivisione rapida con altri operatori -->
       <div class="share-link-box">
         <div style="font-size: 0.85rem; color: #334155; font-weight: 700; margin-bottom: 8px;">
           Devi mandare questa App a un altro operatore?
@@ -1151,7 +1163,6 @@
     }
     setupPWA();
 
-    // Nasconde il pulsante se l'utente ha già aperto l'app dall'icona salvata
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
@@ -1194,7 +1205,6 @@
     });
 
     document.getElementById("btnInstallApp").addEventListener("click", async () => {
-      // Se il browser consente l'installazione immediata con 1 clic (es. Chrome Android/PC)
       if (deferredPrompt) {
         deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
@@ -1261,7 +1271,7 @@
       el.textContent = msg;
       el.classList.add("show");
       clearTimeout(el._timer);
-      el._timer = setTimeout(() => el.classList.remove("show"), 3400);
+      el._timer = setTimeout(() => el.classList.remove("show"), 3800);
     }
 
     function formatEuro(val) {
@@ -1272,12 +1282,17 @@
       return String(raw || "").replace(/\s+/g, "").trim();
     }
 
+    // Normalizza il numero tessera (rimuove spazi superflui e uniforma maiuscole/minuscole)
+    function normalizeTesseraCode(raw) {
+      return String(raw || "").replace(/\s+/g, "").trim().toUpperCase();
+    }
+
     function mapRowFromDb(row) {
       return {
         id: row.id,
         nome: row.nome,
         cognome: row.cognome,
-        nrTessera: row.nr_tessera,
+        nrTessera: normalizeTesseraCode(row.nr_tessera),
         rilasciatoDa: row.rilasciato_da,
         federcaccia: row.federcaccia,
         cellulare: cleanPhoneNumber(row.cellulare),
@@ -1292,7 +1307,7 @@
         id: rec.id,
         nome: rec.nome,
         cognome: rec.cognome,
-        nr_tessera: rec.nrTessera,
+        nr_tessera: normalizeTesseraCode(rec.nrTessera),
         rilasciato_da: rec.rilasciatoDa,
         federcaccia: rec.federcaccia,
         cellulare: cleanPhoneNumber(rec.cellulare),
@@ -1327,6 +1342,7 @@
         const currentSelected = document.getElementById("rilasciatoDa").value;
         renderIssuerOptions(currentSelected);
         renderAll();
+        validateTesseraUniquenessUI();
         if (document.getElementById("phoneLookupInput").value.trim()) {
           runPhoneLookup();
         }
@@ -1357,7 +1373,44 @@
     });
 
     // =========================================================================
-    // 4. TELEFONO SENZA SPAZI + RICERCA RAPIDA PER NUMERO DI TELEFONO
+    // 4. VERIFICA UNIVOCITÀ NR TESSERA AAC IN TEMPO REALE
+    // =========================================================================
+    const nrTesseraInput = document.getElementById("nrTessera");
+    const nrTesseraErrorEl = document.getElementById("nrTesseraError");
+
+    function findDuplicateTesseraLocal(code, excludeId = "") {
+      const normalized = normalizeTesseraCode(code);
+      if (!normalized) return null;
+      return records.find(
+        (r) => normalizeTesseraCode(r.nrTessera) === normalized && r.id !== excludeId
+      ) || null;
+    }
+
+    function validateTesseraUniquenessUI() {
+      const editId = document.getElementById("editId").value;
+      const cleaned = normalizeTesseraCode(nrTesseraInput.value);
+      if (nrTesseraInput.value !== cleaned) {
+        nrTesseraInput.value = cleaned;
+      }
+
+      const dup = findDuplicateTesseraLocal(cleaned, editId);
+      if (dup) {
+        nrTesseraInput.classList.add("input-error");
+        nrTesseraErrorEl.style.display = "block";
+        nrTesseraErrorEl.innerHTML = `⛔ Tessera <b>${escapeHtml(cleaned)}</b> già rilasciata a <b>${escapeHtml(dup.cognome)} ${escapeHtml(dup.nome)}</b> (${escapeHtml(dup.rilasciatoDa)}). Numero non duplicabile.`;
+        return dup;
+      } else {
+        nrTesseraInput.classList.remove("input-error");
+        nrTesseraErrorEl.style.display = "none";
+        nrTesseraErrorEl.innerHTML = "";
+        return null;
+      }
+    }
+
+    nrTesseraInput.addEventListener("input", validateTesseraUniquenessUI);
+
+    // =========================================================================
+    // 5. TELEFONO SENZA SPAZI + RICERCA RAPIDA PER NUMERO DI TELEFONO
     // =========================================================================
     const cellulareInput = document.getElementById("cellulare");
     cellulareInput.addEventListener("input", () => {
@@ -1422,7 +1475,7 @@
     }
 
     // =========================================================================
-    // 5. CALCOLO QUOTA E PUNTI DI RILASCIO
+    // 6. CALCOLO QUOTA E PUNTI DI RILASCIO
     // =========================================================================
     function updateFeeDisplay() {
       const selected = document.querySelector('input[name="federcaccia"]:checked')?.value || "Sì";
@@ -1494,7 +1547,7 @@
     });
 
     // =========================================================================
-    // 6. SALVATAGGIO, MODIFICA ED ELIMINAZIONE SU DATABASE CENTRALE
+    // 7. SALVATAGGIO, MODIFICA ED ELIMINAZIONE CON BLOCCO DUPLICATI SERVER-SIDE
     // =========================================================================
     document.getElementById("tesseraForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -1507,7 +1560,7 @@
       const editId = document.getElementById("editId").value;
       const nome = document.getElementById("nome").value.trim();
       const cognome = document.getElementById("cognome").value.trim();
-      const nrTessera = document.getElementById("nrTessera").value.trim();
+      const nrTessera = normalizeTesseraCode(document.getElementById("nrTessera").value);
       const rilasciatoDa = document.getElementById("rilasciatoDa").value.trim();
       const federcaccia = document.querySelector('input[name="federcaccia"]:checked')?.value || "Sì";
       const cellulare = cleanPhoneNumber(document.getElementById("cellulare").value);
@@ -1519,11 +1572,11 @@
         return;
       }
 
-      const duplicate = records.find(
-        (r) => r.nrTessera.toLowerCase() === nrTessera.toLowerCase() && r.id !== editId
-      );
-      if (duplicate) {
-        showToast(`⚠️ La tessera Nr ${nrTessera} è già presente nell'archivio condiviso!`);
+      // 1° controllo locale immediato
+      const localDup = validateTesseraUniquenessUI();
+      if (localDup) {
+        nrTesseraInput.focus();
+        showToast(`⛔ Tessera Nr ${nrTessera} già assegnata a ${localDup.cognome} ${localDup.nome}!`);
         return;
       }
 
@@ -1531,6 +1584,30 @@
       submitBtn.disabled = true;
 
       try {
+        // 2° controllo diretto sul database centrale (anti-concorrenza tra più postazioni)
+        let dupQuery = sbClient
+          .from("tessere_aac")
+          .select("id, nome, cognome, rilasciato_da, nr_tessera")
+          .ilike("nr_tessera", nrTessera);
+
+        if (editId) {
+          dupQuery = dupQuery.neq("id", editId);
+        }
+
+        const { data: existingRows, error: checkErr } = await dupQuery;
+        if (checkErr) throw checkErr;
+
+        if (existingRows && existingRows.length > 0) {
+          const dupServer = existingRows[0];
+          await loadFromCloud(true);
+          validateTesseraUniquenessUI();
+          nrTesseraInput.focus();
+          showToast(
+            `⛔ Bloccato: la tessera Nr ${nrTessera} è già stata registrata per ${dupServer.cognome} ${dupServer.nome} (${dupServer.rilasciato_da})!`
+          );
+          return;
+        }
+
         const existing = editId ? records.find((r) => r.id === editId) : null;
         const payload = mapRowToDb({
           id: editId || "aac_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
@@ -1545,8 +1622,20 @@
           dataRegistrazione: existing?.dataRegistrazione || new Date().toLocaleDateString("it-IT")
         });
 
-        const { error } = await sbClient.from("tessere_aac").upsert(payload, { onConflict: "id" });
-        if (error) throw error;
+        // 3° controllo vincolo UNIQUE PostgreSQL (codice errore 23505)
+        const { error } = editId
+          ? await sbClient.from("tessere_aac").update(payload).eq("id", editId)
+          : await sbClient.from("tessere_aac").insert(payload);
+
+        if (error) {
+          if (error.code === "23505") {
+            await loadFromCloud(true);
+            validateTesseraUniquenessUI();
+            showToast(`⛔ Impossibile salvare: la tessera Nr ${nrTessera} esiste già nel database!`);
+            return;
+          }
+          throw error;
+        }
 
         resetForm();
         await loadFromCloud(true);
@@ -1562,6 +1651,9 @@
     function resetForm() {
       document.getElementById("tesseraForm").reset();
       document.getElementById("editId").value = "";
+      nrTesseraInput.classList.remove("input-error");
+      nrTesseraErrorEl.style.display = "none";
+      nrTesseraErrorEl.innerHTML = "";
       document.getElementById("formTitle").textContent = "📝 Nuova Registrazione Tessera AAC";
       document.getElementById("btnSubmit").textContent = "💾 Registra Tessera";
       document.getElementById("btnCancelEdit").style.display = "none";
@@ -1577,7 +1669,9 @@
       document.getElementById("editId").value = rec.id;
       document.getElementById("nome").value = rec.nome;
       document.getElementById("cognome").value = rec.cognome;
-      document.getElementById("nrTessera").value = rec.nrTessera;
+      document.getElementById("nrTessera").value = normalizeTesseraCode(rec.nrTessera);
+      validateTesseraUniquenessUI();
+
       if (!issuers.includes(rec.rilasciatoDa)) {
         issuers.push(rec.rilasciatoDa);
         renderIssuerOptions();
@@ -1612,7 +1706,7 @@
     };
 
     // =========================================================================
-    // 7. RESOCONTO E TABELLE
+    // 8. RESOCONTO E TABELLE
     // =========================================================================
     function getSummaryData() {
       const allIssuers = Array.from(new Set([...issuers, ...records.map((r) => r.rilasciatoDa)]));
@@ -1714,7 +1808,7 @@
     }
 
     // =========================================================================
-    // 8. ESPORTAZIONE EXCEL (.XLSX), PDF E BACKUP/RIPRISTINO SUL CLOUD
+    // 9. ESPORTAZIONE EXCEL (.XLSX), PDF E BACKUP/RIPRISTINO SUL CLOUD
     // =========================================================================
     document.getElementById("btnExportXls").addEventListener("click", () => {
       if (typeof XLSX === "undefined") {
@@ -1829,7 +1923,7 @@
     });
 
     document.getElementById("btnBackupJson").addEventListener("click", () => {
-      const payload = { version: 3, exportedAt: new Date().toISOString(), issuers, records };
+      const payload = { version: 4, exportedAt: new Date().toISOString(), issuers, records };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -1857,29 +1951,40 @@
 
           if (Array.isArray(parsed.issuers) && parsed.issuers.length > 0) {
             const pRows = parsed.issuers.map((nome) => ({ nome }));
-            await sbClient.from("punti_rilascio").upsert(pRows, { onConflict: "nome" });
+            await sbClient.from("punti_rilascio").upsert(pRows, { onConflict: "nome", ignoreDuplicates: true });
           }
 
-          const tRows = parsed.records.map((r) =>
-            mapRowToDb({
-              id: r.id || "aac_" + Math.random().toString(36).slice(2, 10),
-              nome: r.nome,
-              cognome: r.cognome,
-              nrTessera: r.nrTessera,
-              rilasciatoDa: r.rilasciatoDa,
-              federcaccia: r.federcaccia === "No" ? "No" : "Sì",
-              cellulare: cleanPhoneNumber(r.cellulare),
-              email: r.email || "",
-              cifra: Number(r.cifra || (r.federcaccia === "No" ? 45 : 40)),
-              dataRegistrazione: r.dataRegistrazione || new Date().toLocaleDateString("it-IT")
-            })
-          );
+          // Deduplica anche internamente al file JSON prima dell'invio
+          const uniqueMap = new Map();
+          parsed.records.forEach((r) => {
+            const code = normalizeTesseraCode(r.nrTessera);
+            if (code && !uniqueMap.has(code)) {
+              uniqueMap.set(
+                code,
+                mapRowToDb({
+                  id: r.id || "aac_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+                  nome: r.nome,
+                  cognome: r.cognome,
+                  nrTessera: code,
+                  rilasciatoDa: r.rilasciatoDa,
+                  federcaccia: r.federcaccia === "No" ? "No" : "Sì",
+                  cellulare: cleanPhoneNumber(r.cellulare),
+                  email: r.email || "",
+                  cifra: Number(r.cifra || (r.federcaccia === "No" ? 45 : 40)),
+                  dataRegistrazione: r.dataRegistrazione || new Date().toLocaleDateString("it-IT")
+                })
+              );
+            }
+          });
 
-          const { error } = await sbClient.from("tessere_aac").upsert(tRows, { onConflict: "nr_tessera" });
+          const tRows = Array.from(uniqueMap.values());
+          const { error } = await sbClient
+            .from("tessere_aac")
+            .upsert(tRows, { onConflict: "nr_tessera", ignoreDuplicates: true });
           if (error) throw error;
 
           await loadFromCloud(true);
-          showToast(`✅ Importati ${tRows.length} record nell'archivio condiviso!`);
+          showToast("✅ Importazione completata (i numeri tessera già presenti sono stati preservati)!");
         } catch {
           showToast("⚠️ Errore durante l'importazione del backup.");
         }
