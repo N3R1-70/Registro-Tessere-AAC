@@ -621,7 +621,7 @@
     .modal {
       background: #ffffff;
       border-radius: 16px;
-      max-width: 500px;
+      max-width: 520px;
       width: 100%;
       padding: 22px;
       box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
@@ -695,9 +695,19 @@
     }
 
     .step-text {
-      font-size: 0.96rem;
+      font-size: 0.94rem;
       color: #1e293b;
-      line-height: 1.45;
+      line-height: 1.48;
+    }
+
+    .tip-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #14532d;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.86rem;
+      margin-bottom: 12px;
     }
 
     .key-pill {
@@ -708,7 +718,7 @@
       font-weight: 800;
       padding: 1px 8px;
       border-radius: 6px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
     .device-switch-tabs {
@@ -720,7 +730,7 @@
 
     .tab-btn {
       flex: 1;
-      min-width: 95px;
+      min-width: 105px;
       padding: 8px 10px;
       border: 1.5px solid #cbd5e1;
       background: #f8fafc;
@@ -1002,39 +1012,57 @@
       <div class="modal-header-brand">
         <img src="FEDERCACCIA UCT.jpg" alt="Logo" onerror="handleLogoError(this)" />
         <div>
-          <h3>Metti l'icona sulla Schermata</h3>
-          <p style="font-size: 0.85rem; color: var(--muted);">Così la apri con un tocco come una normale App</p>
+          <h3>Come Salvare l'Accesso Rapido</h3>
+          <p style="font-size: 0.85rem; color: var(--muted);">Apri l'archivio con un clic dal tuo dispositivo</p>
         </div>
       </div>
 
       <div class="inapp-warning" id="inAppBrowserAlert" style="display:none;">
-        <strong>⚠️ Stai aprendo il link dentro WhatsApp / Email</strong>
-        Da qui non si può salvare l'icona: tocca prima i <span class="key-pill">⋮ 3 puntini in alto a destra</span> e scegli <b>"Apri nel browser"</b> (o <b>"Apri in Chrome / Safari"</b>).
+        <strong>⚠️ Link aperto dentro un'altra app (WhatsApp, Email, Social)</strong>
+        Tocca i <span class="key-pill">⋮ 3 puntini</span> (o il menu dell'app) e scegli <b>"Apri nel browser"</b> (Chrome o Safari) prima di salvare il collegamento.
       </div>
 
       <div id="nativeInstallBox" style="display:none; margin-bottom: 14px;">
-        <button type="button" class="btn btn-primary" id="btnTriggerNativeInstall" style="width:100%; padding: 14px; font-size: 1.05rem;">
-          ✅ Tocca qui per Installare Subito
+        <button type="button" class="btn btn-primary" id="btnTriggerNativeInstall" style="width:100%; padding: 14px; font-size: 1.02rem;">
+          ✅ Installa subito sul dispositivo
         </button>
       </div>
 
       <div class="device-switch-tabs" id="deviceTabs">
-        <button type="button" class="tab-btn" data-target="guide-android">Android / Samsung</button>
+        <button type="button" class="tab-btn" data-target="guide-pc">PC (Chrome / Edge)</button>
+        <button type="button" class="tab-btn" data-target="guide-android">Android</button>
         <button type="button" class="tab-btn" data-target="guide-ios">iPhone / iPad</button>
-        <button type="button" class="tab-btn" data-target="guide-pc">Computer (PC)</button>
       </div>
 
-      <div id="guide-android" class="device-guide">
+      <div id="guide-pc" class="device-guide">
+        <div class="tip-box">
+          Su PC Chrome il menu si chiama <b>"Trasmetti, salva e condividi"</b> (verso il basso del menu a 3 puntini).
+        </div>
         <div class="big-step">
           <div class="step-num">1</div>
           <div class="step-text">
-            Guarda gli angoli dello schermo e tocca il menu con i <span class="key-pill">⋮ 3 puntini</span> (in alto a destra su Chrome) oppure le <span class="key-pill">☰ 3 linee</span> (in basso a destra su Samsung).
+            Clicca in alto a destra su <span class="key-pill">⋮ 3 puntini</span> di Chrome e scendi fino a <b>"Trasmetti, salva e condividi"</b>.
           </div>
         </div>
         <div class="big-step">
           <div class="step-num">2</div>
           <div class="step-text">
-            Tocca la voce <b>"Aggiungi a schermata Home"</b> (oppure <b>"Installa app"</b>) e poi conferma premendo <b>Aggiungi / Installa</b>.
+            Nel sottomenu scegli <b>"Crea collegamento"</b> (oppure <b>"Installa pagina come app..."</b> se presente), spunta <b>"Apri come finestra"</b> se vuoi una finestra dedicata e conferma con <b>Crea / Installa</b>.
+          </div>
+        </div>
+      </div>
+
+      <div id="guide-android" class="device-guide" style="display:none;">
+        <div class="big-step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            Apri il menu del browser toccando <span class="key-pill">⋮ 3 puntini</span> in alto a destra (su Chrome) oppure <span class="key-pill">☰ 3 linee</span> in basso a destra (su Samsung Internet).
+          </div>
+        </div>
+        <div class="big-step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            Tocca <b>"Aggiungi a schermata Home"</b> oppure <b>"Installa app"</b>, quindi conferma su <b>Aggiungi / Installa</b>.
           </div>
         </div>
       </div>
@@ -1043,35 +1071,20 @@
         <div class="big-step">
           <div class="step-num">1</div>
           <div class="step-text">
-            Nella barra in basso di Safari tocca l'icona <b>Condividi</b> <span class="key-pill">⬆️ Quadrato con freccia</span>.
+            In <b>Safari</b> tocca il pulsante <b>Condividi</b> <span class="key-pill">⬆️ Quadrato con freccia</span> (in basso su iPhone, in alto a destra su iPad).
           </div>
         </div>
         <div class="big-step">
           <div class="step-num">2</div>
           <div class="step-text">
-            Scorri l'elenco verso il basso, tocca <b>"Aggiungi alla schermata Home"</b> e poi premi <b>Aggiungi</b> in alto a destra.
-          </div>
-        </div>
-      </div>
-
-      <div id="guide-pc" class="device-guide" style="display:none;">
-        <div class="big-step">
-          <div class="step-num">1</div>
-          <div class="step-text">
-            In alto a destra nella barra dove c'è l'indirizzo del sito, clicca sull'icona <span class="key-pill">🖥️ Installa</span> oppure sui <span class="key-pill">⋮ 3 puntini</span> in alto a destra del browser.
-          </div>
-        </div>
-        <div class="big-step">
-          <div class="step-num">2</div>
-          <div class="step-text">
-            Scegli <b>"Salva e condividi" &rarr; "Installa pagina come app"</b> (oppure <b>"Crea collegamento"</b>). Troverai l'icona direttamente sul Desktop.
+            Scorri verso il basso e tocca <b>"Aggiungi alla schermata Home"</b>, poi premi <b>Aggiungi</b> in alto a destra.
           </div>
         </div>
       </div>
 
       <div class="share-link-box">
         <div style="font-size: 0.85rem; color: #334155; font-weight: 700; margin-bottom: 8px;">
-          Devi mandare questa App a un altro operatore?
+          Vuoi inviare il link a un altro operatore?
         </div>
         <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary btn-sm" id="btnShareWhatsApp">📤 Invia su WhatsApp</button>
@@ -1080,7 +1093,7 @@
       </div>
 
       <div class="form-actions" style="justify-content: flex-end; margin-top: 14px;">
-        <button type="button" class="btn btn-secondary" id="btnCloseInstallModal">Ho capito, chiudi</button>
+        <button type="button" class="btn btn-secondary" id="btnCloseInstallModal">Chiudi</button>
       </div>
     </div>
   </div>
@@ -1237,7 +1250,7 @@
     document.getElementById("btnShareWhatsApp").addEventListener("click", () => {
       const cleanUrl = window.location.href.split("#")[0];
       const msg = encodeURIComponent(
-        `Ecco il link per la registrazione Tessere AAC (Federcaccia Toscana UCT):\n${cleanUrl}\n\nAprilo nel browser (Chrome o Safari) e tocca "Salva sul Telefono / PC" in alto per mettere l'icona sullo schermo.`
+        `Ecco il link per la registrazione Tessere AAC (Federcaccia Toscana UCT):\n${cleanUrl}\n\nAprilo nel browser (Chrome o Safari) e tocca "Salva sul Telefono / PC" in alto per vedere i passaggi di salvataggio.`
       );
       window.open(`https://wa.me/?text=${msg}`, "_blank");
     });
