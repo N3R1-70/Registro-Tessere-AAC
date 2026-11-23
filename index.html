@@ -10,9 +10,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Gestione Tessere AAC - Federcaccia Toscana UCT</title>
 
-  <!-- Libreria SheetJS per esportazione Excel (.xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Librerie jsPDF + AutoTable per esportazione PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
@@ -48,7 +47,6 @@
       padding-bottom: 48px;
     }
 
-    /* Header istituzionale */
     header {
       background: linear-gradient(135deg, #0f3d20 0%, #166534 100%);
       color: #ffffff;
@@ -109,6 +107,19 @@
       margin-top: 2px;
     }
 
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #ecfdf5;
+      margin-top: 4px;
+    }
+
     .header-actions {
       display: flex;
       gap: 8px;
@@ -136,7 +147,6 @@
       transform: translateY(-1px);
     }
 
-    /* Container principale */
     .container {
       max-width: 1180px;
       margin: 22px auto;
@@ -146,7 +156,6 @@
       gap: 22px;
     }
 
-    /* Sezione Ricerca Rapida per Telefono */
     .phone-lookup-card {
       background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
       border: 2px solid #86efac;
@@ -225,7 +234,6 @@
       font-weight: 500;
     }
 
-    /* Card generica */
     .card {
       background: var(--card);
       border-radius: var(--radius);
@@ -248,7 +256,6 @@
       gap: 10px;
     }
 
-    /* Griglia Modulo */
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -330,7 +337,6 @@
       background: #bbf7d0;
     }
 
-    /* Radio Federcaccia */
     .radio-group {
       display: flex;
       gap: 10px;
@@ -374,7 +380,6 @@
       color: var(--accent);
     }
 
-    /* Box Cifra Automatica */
     .fee-box {
       background: #f8fafc;
       border: 1.5px dashed #94a3b8;
@@ -392,7 +397,6 @@
       font-weight: 800;
     }
 
-    /* Pulsanti azione */
     .btn {
       padding: 10px 16px;
       border: none;
@@ -405,6 +409,11 @@
       justify-content: center;
       gap: 6px;
       transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .btn:active {
@@ -458,7 +467,6 @@
       flex-wrap: wrap;
     }
 
-    /* Riepilogo Contabile */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -498,7 +506,6 @@
       margin-top: 2px;
     }
 
-    /* Tabelle */
     .table-responsive {
       width: 100%;
       overflow-x: auto;
@@ -577,7 +584,6 @@
       flex-wrap: wrap;
     }
 
-    /* Modal Installazione & Nuovo Punto Rilascio */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -659,9 +665,11 @@
         <div class="brand-text">
           <h1>Gestione Tessere AAC</h1>
           <p>Area Addestramento Cani &bull; Federcaccia Toscana - UCT</p>
+          <div class="sync-status" id="syncStatus">⏳ Connessione archivio...</div>
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" class="btn-outline btn-sm" id="btnRefreshCloud" style="background:#ffffff;color:#14532d;">🔄 Aggiorna</button>
         <button type="button" class="btn-install" id="btnInstallApp">
           📲 Installa App / Schermata Home
         </button>
@@ -671,11 +679,11 @@
 
   <main class="container">
 
-    <!-- SEZIONE RICERCA RAPIDA PER NUMERO DI TELEFONO -->
+    <!-- RICERCA RAPIDA PER NUMERO DI TELEFONO -->
     <section class="phone-lookup-card" aria-label="Ricerca contatto per numero di telefono">
       <div class="phone-lookup-header">
         <h2>🔍 Ricerca Rapida Contatto per Numero di Telefono</h2>
-        <span style="font-size: 0.82rem; color: #166534; font-weight: 600;">Verifica immediata tesseramento</span>
+        <span style="font-size: 0.82rem; color: #166534; font-weight: 600;">Ricerca sull'intero archivio condiviso</span>
       </div>
       <div class="phone-lookup-bar">
         <input
@@ -789,7 +797,7 @@
         <div class="stat-card">
           <div class="stat-label">Tessere AAC Emesse</div>
           <div class="stat-value" id="totaleTessere">0</div>
-          <div class="stat-sub">Totale archivio locale</div>
+          <div class="stat-sub">Archivio condiviso centrale</div>
         </div>
       </div>
 
@@ -858,7 +866,7 @@
     <div class="modal">
       <h3>➕ Aggiungi Punto di Rilascio</h3>
       <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 12px;">
-        Inserisci il nome della nuova armeria, sezione o punto autorizzato al rilascio delle tessere AAC.
+        Il nuovo punto di rilascio sarà subito disponibile per tutte le postazioni.
       </p>
       <div class="form-group">
         <label for="newIssuerName">Nome Punto di Rilascio</label>
@@ -871,12 +879,12 @@
     </div>
   </div>
 
-  <!-- MODAL GUIDA INSTALLAZIONE (SAMSUNG / ANDROID / IPHONE / PC) -->
+  <!-- MODAL GUIDA INSTALLAZIONE -->
   <div class="modal-backdrop" id="installModal">
     <div class="modal">
       <h3>📲 Aggiungi App alla Schermata Home / Desktop</h3>
       <p style="font-size: 0.88rem; color: #475569; margin-bottom: 12px;">
-        Se il pulsante automatico non parte sul tuo telefono, segui i 2 passaggi qui sotto in base al browser che stai usando:
+        Segui i passaggi per il tuo dispositivo o browser:
       </p>
 
       <div class="install-step-box">
@@ -893,14 +901,13 @@
 
       <div class="install-step-box">
         <strong>🍎 iPhone / iPad (Safari)</strong>
-        1. Tocca il pulsante <b>Condividi</b> (quadrato con freccia verso l'alto in basso).<br />
-        2. Scorri e tocca <b>Aggiungi alla schermata Home</b>.
+        1. Tocca <b>Condividi</b> (quadrato con freccia verso l'alto).<br />
+        2. Tocca <b>Aggiungi alla schermata Home</b>.
       </div>
 
       <div class="install-step-box">
         <strong>💻 Computer (Windows / Mac)</strong>
-        Puoi installarla dalla barra degli indirizzi di Chrome/Edge (icona monitor con freccia) oppure scaricare il collegamento rapido qui sotto:
-        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary btn-sm" id="btnDownloadShortcut">⬇️ Scarica Collegamento PC (.url)</button>
           <button type="button" class="btn btn-outline btn-sm" id="btnCopyUrl">📋 Copia Link App</button>
         </div>
@@ -916,7 +923,25 @@
 
   <script>
     // =========================================================================
-    // 1. LOGO FALLBACK + MANIFEST DINAMICO + SERVICE WORKER (PER SAMSUNG/CHROME)
+    // 1. CONFIGURAZIONE DATABASE CENTRALE SUPABASE
+    // =========================================================================
+    const SUPABASE_CONFIG = {
+      url: "https://statjraypnmamhjpackl.supabase.co",
+      anonKey: "sb_publishable_9HBdimfzFqjLVymNCyppkw_mQ10vSar"
+    };
+
+    const isCloudConfigured =
+      SUPABASE_CONFIG.url &&
+      !SUPABASE_CONFIG.url.includes("INCOLLA_QUI") &&
+      SUPABASE_CONFIG.anonKey &&
+      !SUPABASE_CONFIG.anonKey.includes("INCOLLA_QUI");
+
+    const sbClient = isCloudConfigured
+      ? window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey)
+      : null;
+
+    // =========================================================================
+    // 2. LOGO FALLBACK + PWA MANIFEST + SERVICE WORKER
     // =========================================================================
     const FALLBACK_SVG_DATA = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -951,14 +976,12 @@
           { src: iconUrl, sizes: "512x512", type: "image/jpeg", purpose: "any" }
         ]
       };
-
       const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
       const manifestLink = document.createElement("link");
       manifestLink.rel = "manifest";
       manifestLink.href = URL.createObjectURL(manifestBlob);
       document.head.appendChild(manifestLink);
 
-      // Service Worker inline per soddisfare i requisiti PWA di Chrome su Samsung
       if ("serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
         const swCode = `
           self.addEventListener('install', (e) => self.skipWaiting());
@@ -968,8 +991,7 @@
           });
         `;
         const swBlob = new Blob([swCode], { type: "application/javascript" });
-        const swUrl = URL.createObjectURL(swBlob);
-        navigator.serviceWorker.register(swUrl).catch(() => {});
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
       }
     }
     setupPWA();
@@ -1017,18 +1039,16 @@
     });
 
     // =========================================================================
-    // 2. STATO APPLICAZIONE E STORAGE LOCALE
+    // 3. STATO E SINCRONIZZAZIONE CON DATABASE CENTRALE
     // =========================================================================
-    const STORAGE_RECORDS = "aac_federcaccia_records_v2";
-    const STORAGE_ISSUERS = "aac_federcaccia_issuers_v2";
     const DEFAULT_ISSUERS = ["Quagliodromo", "Sede", "Armeria Lo Stellino"];
+    let records = [];
+    let issuers = [...DEFAULT_ISSUERS];
 
-    let records = JSON.parse(localStorage.getItem(STORAGE_RECORDS) || "[]");
-    let issuers = JSON.parse(localStorage.getItem(STORAGE_ISSUERS) || JSON.stringify(DEFAULT_ISSUERS));
-
-    function saveState() {
-      localStorage.setItem(STORAGE_RECORDS, JSON.stringify(records));
-      localStorage.setItem(STORAGE_ISSUERS, JSON.stringify(issuers));
+    function setSyncStatus(text, isWarning = false) {
+      const el = document.getElementById("syncStatus");
+      el.textContent = text;
+      el.style.background = isWarning ? "rgba(220, 38, 38, 0.35)" : "rgba(255, 255, 255, 0.16)";
     }
 
     function showToast(msg) {
@@ -1036,20 +1056,103 @@
       el.textContent = msg;
       el.classList.add("show");
       clearTimeout(el._timer);
-      el._timer = setTimeout(() => el.classList.remove("show"), 3200);
+      el._timer = setTimeout(() => el.classList.remove("show"), 3400);
     }
 
     function formatEuro(val) {
       return "€ " + Number(val).toFixed(2).replace(".", ",");
     }
 
-    // Normalizzazione numero di telefono: rimuove tutti gli spazi
     function cleanPhoneNumber(raw) {
       return String(raw || "").replace(/\s+/g, "").trim();
     }
 
+    function mapRowFromDb(row) {
+      return {
+        id: row.id,
+        nome: row.nome,
+        cognome: row.cognome,
+        nrTessera: row.nr_tessera,
+        rilasciatoDa: row.rilasciato_da,
+        federcaccia: row.federcaccia,
+        cellulare: cleanPhoneNumber(row.cellulare),
+        email: row.email || "",
+        cifra: Number(row.cifra),
+        dataRegistrazione: row.data_registrazione
+      };
+    }
+
+    function mapRowToDb(rec) {
+      return {
+        id: rec.id,
+        nome: rec.nome,
+        cognome: rec.cognome,
+        nr_tessera: rec.nrTessera,
+        rilasciato_da: rec.rilasciatoDa,
+        federcaccia: rec.federcaccia,
+        cellulare: cleanPhoneNumber(rec.cellulare),
+        email: rec.email || "",
+        cifra: Number(rec.cifra),
+        data_registrazione: rec.dataRegistrazione
+      };
+    }
+
+    async function loadFromCloud(silent = false) {
+      if (!isCloudConfigured || !sbClient) {
+        setSyncStatus("⚠️ Database non ancora configurato", true);
+        renderIssuerOptions();
+        renderAll();
+        return;
+      }
+
+      if (!silent) setSyncStatus("🔄 Sincronizzazione archivio...");
+      try {
+        const [tessereRes, puntiRes] = await Promise.all([
+          sbClient.from("tessere_aac").select("*").order("created_at", { ascending: false }),
+          sbClient.from("punti_rilascio").select("*").order("id", { ascending: true })
+        ]);
+
+        if (tessereRes.error) throw tessereRes.error;
+        if (puntiRes.error) throw puntiRes.error;
+
+        records = (tessereRes.data || []).map(mapRowFromDb);
+        const cloudIssuers = (puntiRes.data || []).map((p) => p.nome);
+        issuers = Array.from(new Set([...DEFAULT_ISSUERS, ...cloudIssuers]));
+
+        const currentSelected = document.getElementById("rilasciatoDa").value;
+        renderIssuerOptions(currentSelected);
+        renderAll();
+        if (document.getElementById("phoneLookupInput").value.trim()) {
+          runPhoneLookup();
+        }
+        setSyncStatus(`🟢 Archivio condiviso attivo (${records.length} tessere)`);
+      } catch (err) {
+        console.error(err);
+        setSyncStatus("🔴 Errore connessione database (verifica SQL)", true);
+        if (!silent) showToast("⚠️ Impossibile leggere il database centrale.");
+      }
+    }
+
+    function subscribeRealtime() {
+      if (!isCloudConfigured || !sbClient) return;
+      sbClient
+        .channel("tessere_aac_realtime")
+        .on("postgres_changes", { event: "*", schema: "public", table: "tessere_aac" }, () => {
+          loadFromCloud(true);
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "punti_rilascio" }, () => {
+          loadFromCloud(true);
+        })
+        .subscribe();
+    }
+
+    document.getElementById("btnRefreshCloud").addEventListener("click", () => {
+      loadFromCloud(false);
+      showToast("🔄 Archivio aggiornato dal server!");
+    });
+
     // =========================================================================
-    // 3. GESTIONE CAMPI FORM E RIMOZIONE AUTOMATICA SPAZI SUL CELLULARE
+    // 4. TELEFONO SENZA SPAZI + RICERCA RAPIDA PER NUMERO DI TELEFONO
     // =========================================================================
     const cellulareInput = document.getElementById("cellulare");
     cellulareInput.addEventListener("input", () => {
@@ -1113,6 +1216,9 @@
         .join("");
     }
 
+    // =========================================================================
+    // 5. CALCOLO QUOTA E PUNTI DI RILASCIO
+    // =========================================================================
     function updateFeeDisplay() {
       const selected = document.querySelector('input[name="federcaccia"]:checked')?.value || "Sì";
       const isFidc = selected === "Sì";
@@ -1148,7 +1254,6 @@
       }
     }
 
-    // Modal nuovo punto di rilascio
     document.getElementById("btnOpenIssuerModal").addEventListener("click", () => {
       document.getElementById("newIssuerName").value = "";
       document.getElementById("issuerModal").classList.add("open");
@@ -1159,27 +1264,40 @@
       document.getElementById("issuerModal").classList.remove("open");
     });
 
-    document.getElementById("btnSaveIssuer").addEventListener("click", () => {
+    document.getElementById("btnSaveIssuer").addEventListener("click", async () => {
       const name = document.getElementById("newIssuerName").value.trim();
       if (!name) {
         showToast("⚠️ Inserisci il nome del punto di rilascio.");
         return;
       }
-      if (!issuers.some((i) => i.toLowerCase() === name.toLowerCase())) {
-        issuers.push(name);
-        saveState();
+      if (!isCloudConfigured || !sbClient) {
+        showToast("⚠️ Database non configurato.");
+        return;
       }
+
+      const { error } = await sbClient.from("punti_rilascio").upsert({ nome: name }, { onConflict: "nome" });
+      if (error) {
+        showToast("⚠️ Errore durante il salvataggio del punto di rilascio.");
+        return;
+      }
+
+      if (!issuers.includes(name)) issuers.push(name);
       renderIssuerOptions(name);
       renderAll();
       document.getElementById("issuerModal").classList.remove("open");
-      showToast(`Punto di rilascio "${name}" aggiunto!`);
+      showToast(`Punto di rilascio "${name}" salvato per tutte le postazioni!`);
     });
 
     // =========================================================================
-    // 4. SALVATAGGIO, MODIFICA ED ELIMINAZIONE RECORD
+    // 6. SALVATAGGIO, MODIFICA ED ELIMINAZIONE SU DATABASE CENTRALE
     // =========================================================================
-    document.getElementById("tesseraForm").addEventListener("submit", (e) => {
+    document.getElementById("tesseraForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+
+      if (!isCloudConfigured || !sbClient) {
+        showToast("⚠️ Database non configurato.");
+        return;
+      }
 
       const editId = document.getElementById("editId").value;
       const nome = document.getElementById("nome").value.trim();
@@ -1196,39 +1314,21 @@
         return;
       }
 
-      if (/\s/.test(cellulare)) {
-        showToast("⚠️ Il numero di cellulare non deve contenere spazi.");
-        return;
-      }
-
       const duplicate = records.find(
         (r) => r.nrTessera.toLowerCase() === nrTessera.toLowerCase() && r.id !== editId
       );
       if (duplicate) {
-        showToast(`⚠️ Attenzione: la tessera Nr ${nrTessera} risulta già registrata!`);
+        showToast(`⚠️ La tessera Nr ${nrTessera} è già presente nell'archivio condiviso!`);
         return;
       }
 
-      if (editId) {
-        const idx = records.findIndex((r) => r.id === editId);
-        if (idx !== -1) {
-          records[idx] = {
-            ...records[idx],
-            nome,
-            cognome,
-            nrTessera,
-            rilasciatoDa,
-            federcaccia,
-            cellulare,
-            email,
-            cifra
-          };
-        }
-        resetForm();
-        showToast("✅ Tessera aggiornata correttamente!");
-      } else {
-        records.unshift({
-          id: "aac_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      const submitBtn = document.getElementById("btnSubmit");
+      submitBtn.disabled = true;
+
+      try {
+        const existing = editId ? records.find((r) => r.id === editId) : null;
+        const payload = mapRowToDb({
+          id: editId || "aac_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
           nome,
           cognome,
           nrTessera,
@@ -1237,15 +1337,21 @@
           cellulare,
           email,
           cifra,
-          dataRegistrazione: new Date().toLocaleDateString("it-IT")
+          dataRegistrazione: existing?.dataRegistrazione || new Date().toLocaleDateString("it-IT")
         });
-        resetForm();
-        showToast("✅ Tessera AAC registrata!");
-      }
 
-      saveState();
-      renderAll();
-      if (phoneLookupInput.value.trim()) runPhoneLookup();
+        const { error } = await sbClient.from("tessere_aac").upsert(payload, { onConflict: "id" });
+        if (error) throw error;
+
+        resetForm();
+        await loadFromCloud(true);
+        showToast(editId ? "✅ Tessera aggiornata sull'archivio!" : "✅ Tessera salvata sull'archivio condiviso!");
+      } catch (err) {
+        console.error(err);
+        showToast("⚠️ Errore durante il salvataggio sul database.");
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
 
     function resetForm() {
@@ -1286,19 +1392,22 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    window.deleteRecord = function (id) {
+    window.deleteRecord = async function (id) {
       const rec = records.find((r) => r.id === id);
       if (!rec) return;
-      if (!confirm(`Eliminare la tessera Nr ${rec.nrTessera} intestata a ${rec.nome} ${rec.cognome}?`)) return;
-      records = records.filter((r) => r.id !== id);
-      saveState();
-      renderAll();
-      if (phoneLookupInput.value.trim()) runPhoneLookup();
-      showToast("🗑️ Tessera eliminata.");
+      if (!confirm(`Eliminare la tessera Nr ${rec.nrTessera} intestata a ${rec.nome} ${rec.cognome} dall'archivio condiviso?`)) return;
+
+      const { error } = await sbClient.from("tessere_aac").delete().eq("id", id);
+      if (error) {
+        showToast("⚠️ Errore durante l'eliminazione.");
+        return;
+      }
+      await loadFromCloud(true);
+      showToast("🗑️ Tessera eliminata dall'archivio.");
     };
 
     // =========================================================================
-    // 5. RENDERING RESOCONTO E TABELLA REGISTRO
+    // 7. RESOCONTO E TABELLE
     // =========================================================================
     function getSummaryData() {
       const allIssuers = Array.from(new Set([...issuers, ...records.map((r) => r.rilasciatoDa)]));
@@ -1307,13 +1416,7 @@
         const fidcCount = list.filter((r) => r.federcaccia === "Sì").length;
         const noFidcCount = list.filter((r) => r.federcaccia === "No").length;
         const totalAmount = list.reduce((sum, r) => sum + Number(r.cifra || 0), 0);
-        return {
-          issuer,
-          totalCount: list.length,
-          fidcCount,
-          noFidcCount,
-          totalAmount
-        };
+        return { issuer, totalCount: list.length, fidcCount, noFidcCount, totalAmount };
       });
     }
 
@@ -1406,17 +1509,14 @@
     }
 
     // =========================================================================
-    // 6. ESPORTAZIONE EXCEL (.XLSX) E PDF + BACKUP JSON
+    // 8. ESPORTAZIONE EXCEL (.XLSX), PDF E BACKUP/RIPRISTINO SUL CLOUD
     // =========================================================================
     document.getElementById("btnExportXls").addEventListener("click", () => {
       if (typeof XLSX === "undefined") {
-        showToast("⚠️ Libreria Excel non disponibile offline.");
+        showToast("⚠️ Libreria Excel non disponibile.");
         return;
       }
-
       const wb = XLSX.utils.book_new();
-
-      // Foglio 1: Elenco Tessere
       const rowsTessere = records.map((r) => ({
         "Nr Tessera AAC": r.nrTessera,
         "Cognome": r.cognome,
@@ -1428,10 +1528,8 @@
         "Cifra Versata (€)": Number(r.cifra),
         "Data Registrazione": r.dataRegistrazione || ""
       }));
-      const wsTessere = XLSX.utils.json_to_sheet(rowsTessere);
-      XLSX.utils.book_append_sheet(wb, wsTessere, "Elenco Tessere");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsTessere), "Elenco Tessere");
 
-      // Foglio 2: Resoconto Incassi per Punto di Rilascio
       const summary = getSummaryData();
       const rowsResoconto = summary.map((s) => ({
         "Punto di Rilascio": s.issuer,
@@ -1451,24 +1549,20 @@
         "Incasso Non Tesserati (€)": records.filter((r) => r.federcaccia === "No").length * 45,
         "Totale Incassato (€)": records.reduce((s, r) => s + Number(r.cifra || 0), 0)
       });
-      const wsResoconto = XLSX.utils.json_to_sheet(rowsResoconto);
-      XLSX.utils.book_append_sheet(wb, wsResoconto, "Resoconto Incassi");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsResoconto), "Resoconto Incassi");
 
-      const dateStr = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `Tessere_AAC_Federcaccia_${dateStr}.xlsx`);
+      XLSX.writeFile(wb, `Tessere_AAC_Federcaccia_${new Date().toISOString().slice(0, 10)}.xlsx`);
       showToast("📗 File Excel (.xlsx) scaricato!");
     });
 
     document.getElementById("btnExportPdf").addEventListener("click", () => {
       if (!window.jspdf) {
-        showToast("⚠️ Libreria PDF non disponibile offline.");
+        showToast("⚠️ Libreria PDF non disponibile.");
         return;
       }
-
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-      // Intestazione
       doc.setFillColor(20, 83, 45);
       doc.rect(0, 0, 297, 22, "F");
       doc.setTextColor(255, 255, 255);
@@ -1479,7 +1573,6 @@
       doc.setFont("helvetica", "normal");
       doc.text(`Generato il: ${new Date().toLocaleString("it-IT")}`, 14, 17);
 
-      // Tabella 1: Resoconto Incassi
       const summary = getSummaryData();
       const summaryBody = summary.map((s) => [
         s.issuer,
@@ -1506,7 +1599,6 @@
         bodyStyles: { fontSize: 8.5 }
       });
 
-      // Tabella 2: Elenco Analitico Tessere
       const recordsBody = records.map((r) => [
         r.nrTessera,
         `${r.cognome} ${r.nome}`,
@@ -1527,14 +1619,12 @@
         bodyStyles: { fontSize: 8 }
       });
 
-      const dateStr = new Date().toISOString().slice(0, 10);
-      doc.save(`Tessere_AAC_Federcaccia_${dateStr}.pdf`);
+      doc.save(`Tessere_AAC_Federcaccia_${new Date().toISOString().slice(0, 10)}.pdf`);
       showToast("📕 File PDF scaricato!");
     });
 
-    // Backup e Ripristino JSON
     document.getElementById("btnBackupJson").addEventListener("click", () => {
-      const payload = { version: 2, exportedAt: new Date().toISOString(), issuers, records };
+      const payload = { version: 3, exportedAt: new Date().toISOString(), issuers, records };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -1550,27 +1640,43 @@
     document.getElementById("restoreFileInput").addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      if (!isCloudConfigured || !sbClient) {
+        showToast("⚠️ Database non configurato.");
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         try {
           const parsed = JSON.parse(ev.target.result);
           if (!Array.isArray(parsed.records)) throw new Error("Formato non valido");
-          if (Array.isArray(parsed.issuers)) {
-            issuers = Array.from(new Set([...DEFAULT_ISSUERS, ...issuers, ...parsed.issuers]));
+
+          if (Array.isArray(parsed.issuers) && parsed.issuers.length > 0) {
+            const pRows = parsed.issuers.map((nome) => ({ nome }));
+            await sbClient.from("punti_rilascio").upsert(pRows, { onConflict: "nome" });
           }
-          // Unisce i record evitando duplicati sullo stesso Nr Tessera
-          const existingMap = new Map(records.map((r) => [r.nrTessera.toLowerCase(), r]));
-          parsed.records.forEach((r) => {
-            r.cellulare = cleanPhoneNumber(r.cellulare);
-            existingMap.set(r.nrTessera.toLowerCase(), r);
-          });
-          records = Array.from(existingMap.values());
-          saveState();
-          renderIssuerOptions();
-          renderAll();
-          showToast(`✅ Ripristinati ${records.length} record in archivio!`);
+
+          const tRows = parsed.records.map((r) =>
+            mapRowToDb({
+              id: r.id || "aac_" + Math.random().toString(36).slice(2, 10),
+              nome: r.nome,
+              cognome: r.cognome,
+              nrTessera: r.nrTessera,
+              rilasciatoDa: r.rilasciatoDa,
+              federcaccia: r.federcaccia === "No" ? "No" : "Sì",
+              cellulare: cleanPhoneNumber(r.cellulare),
+              email: r.email || "",
+              cifra: Number(r.cifra || (r.federcaccia === "No" ? 45 : 40)),
+              dataRegistrazione: r.dataRegistrazione || new Date().toLocaleDateString("it-IT")
+            })
+          );
+
+          const { error } = await sbClient.from("tessere_aac").upsert(tRows, { onConflict: "nr_tessera" });
+          if (error) throw error;
+
+          await loadFromCloud(true);
+          showToast(`✅ Importati ${tRows.length} record nell'archivio condiviso!`);
         } catch {
-          showToast("⚠️ File di backup non valido.");
+          showToast("⚠️ Errore durante l'importazione del backup.");
         }
       };
       reader.readAsText(file);
@@ -1585,10 +1691,9 @@
         .replace(/"/g, "&quot;");
     }
 
-    // Inizializzazione
-    renderIssuerOptions();
     updateFeeDisplay();
-    renderAll();
+    loadFromCloud(false);
+    subscribeRealtime();
   </script>
 </body>
 </html>
